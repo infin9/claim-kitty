@@ -1,0 +1,197 @@
+@font-face{
+    font-family: 'Kanit-Light';
+    src: url('/Design/Font/Kanit-Light.ttf') format('truetype');
+  }
+  @font-face{
+    font-family: 'Kanit-Regular';
+    src: url('/Design/Font/Kanit-Regular.ttf') format('truetype');
+  }
+  @font-face{
+    font-family: 'Kanit-SemiBold';
+    src: url('/Design/Font/Kanit-SemiBold.ttf') format('truetype');
+  }
+  @font-face{
+    font-family: 'Kanit-Bold';
+    src: url('/Design/Font/Kanit-Bold.ttf') format('truetype');
+  }
+  @font-face{
+    font-family: 'Kanit-ExtraBold';
+    src: url('/Design/Font/Kanit-ExtraBold.ttf') format('truetype');
+  }
+  
+  /*SET UP PAGE PROPERTIES*/
+  * {
+    font-family: 'Kanit-Regular', sans-serif;
+    box-sizing: border-box;
+  }
+  body{
+    background-image:url('/Design/bg.png');
+    background-size: 200px;
+    background-repeat: repeat;
+  }
+  header{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100px;
+    background-color: #efa1d2;
+    z-index: 1000;
+  }
+  p{
+    font-family: 'Kanit-Light', sans-serif;
+  }
+  .form{
+    width: 100%;
+    padding: 10px;
+    border:3px solid #92E8D8;
+    border-radius: 15px;
+  }
+  input[type="file"] {
+      display: none;
+  }
+  .fileUploader{
+    font-family: 'Kanit-Bold', sans-serif;
+    position: relative;
+    top: 20px;
+    left: 0;
+    cursor: pointer;
+    padding: 20px;
+    border: 3px solid #92E8D8;
+    border-radius: 15px;
+    color: #1d7595;
+  }
+  
+  /*DECLARE ELEMENTS OF PAGE PROPERTIES*/
+  .logo{
+    position: absolute;
+    left: 50%;
+    margin-left: -40px;
+    top: 10px;
+  }
+  .iconContainer{
+    position: absolute;
+    width: 130px;
+    height: 40px;
+    top: 30px;
+    left: 30px;
+  }
+  .icon{
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    background-size: 60%;
+    background-position: center;
+    background-repeat: no-repeat;
+    cursor: pointer;
+  }
+  #twitter-icon{
+    background-image: url("/Design/twitter.svg");
+  }
+  #discord-icon{
+    background-image: url("/Design/discord.svg");
+  }
+  #flarum-icon{
+    background-image: url("/Design/forum.png");
+  }
+  .container{
+    position: absolute;
+    top: 130px;
+    left: 50%;
+    bottom: 0px;
+    width: 700px;
+    margin-left: -350px;
+  }
+  .panel{
+    width: 100%;
+    border-radius: 30px;
+    background-color: #F8FAFA;
+    padding-top: 1px;
+    padding-bottom: 20px;
+    padding-left: 30px;
+    padding-right: 30px;
+    margin-bottom: 30px;
+  }
+  .button{
+    padding: 20px;
+    border-radius: 15px;
+    cursor: pointer;
+  }
+  #connect-wallet{
+    border: 2px solid white;
+    color: white;
+    position: absolute;
+    top: 15px;
+    right: 15px;
+  }
+  #confirmAirdrop{
+    font-family: 'Kanit-Bold', sans-serif;
+    text-align: center;
+    font-size: 30px;
+    width: 100%;
+    background: #efa1d2;
+  }
+  #demoTable {
+    border-collapse: collapse;
+    width: 100%;
+    padding: 20px;
+    margin-top: 80px;
+  }
+  
+  #demoTable td {
+    padding: 20px;
+    background: #f2f2f2;
+    border-radius: 15px;
+    margin-top: 20px;
+    border:4px solid #F8FAFA;
+  }
+  .claimList{
+    display: block;
+    width: 100%;
+    max-height: 350px;
+    border-radius: 15px;
+    overflow-y: scroll;
+    background-color: #d9d9d9;
+    padding: 10px;
+  }
+  .claimPanel{
+    display: inline-block;
+    position: relative;
+    width: 100%;
+    padding: 25px;
+    background-color: #F8FAFA;
+    border-radius: 15px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+  }
+  #claimButton{
+    background-color: #efa1d2;
+    display: inline-block;
+    vertical-align: baseline;
+    text-align: right;
+    color: white;
+    position: absolute;
+    top: 5px;
+    right: 5px;
+  }
+  #claimAll{
+    background-color: #efa1d2;
+    display: inline-block;
+    vertical-align: baseline;
+    text-align: left;
+    color: white;
+    position: relative;
+    margin-top: 10px;
+  }
+  
+  @media screen and (max-width: 730px){
+    .logo{
+      left: 10px;
+      margin-left: 0;
+    }
+    .container{
+      width: 95%;
+      left: 2.5%;
+      margin-left: 0;
+    }
+  }
