@@ -26,15 +26,25 @@ import reportWebVitals from 'reportWebVitals';
 
 // Initialize languages
 import './locales/i18n';
+import { createClient, WagmiConfig } from 'wagmi';
+import { getDefaultProvider } from 'ethers';
 
 const store = configureAppStore();
 const MOUNT_NODE = document.getElementById('root') as HTMLElement;
+
+const client = createClient({
+  autoConnect: true,
+  provider: getDefaultProvider(),
+})
+
 
 ReactDOMClient.createRoot(MOUNT_NODE!).render(
   <Provider store={store}>
     <HelmetProvider>
       <React.StrictMode>
-        <App />
+        <WagmiConfig client={client}>
+          <App />
+        </WagmiConfig>
       </React.StrictMode>
     </HelmetProvider>
   </Provider>,
