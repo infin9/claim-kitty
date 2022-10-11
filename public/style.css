@@ -255,3 +255,31 @@ input:checked + .slider:before {
     margin-left: 0;
   }
 }
+
+
+.loader-overlay{
+  position: fixed;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.loader-overlay .spinner{
+  display: inline-block;
+  border: 8px solid #f3f3f3; /* Light grey */
+  border-top: 8px solid transparent; /* Blue */
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

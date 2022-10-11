@@ -1,5 +1,5 @@
 import { Header } from 'app/components/Header';
-import { ethers } from 'ethers';
+import { BigNumber, ethers, FixedNumber } from 'ethers';
 import * as React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useAccount, useContract, useSigner } from 'wagmi';
@@ -10,6 +10,7 @@ import { PinataService } from 'app/services/PinataService';
 
 import { MerkleTree } from 'merkletreejs';
 import SHA256 from 'crypto-js/sha256';
+import { LoaderContext } from 'app';
 
 const CONTRACT_ADDRESS = '0x770e8c34ab8392a24f78280463a7a73210ff2633';
 const MAX_APPROVE_AMOUNT =
@@ -29,6 +30,8 @@ export function AppPage() {
     contractInterface: contractABI,
     signerOrProvider: signer,
   });
+
+  const { setIsLoading } = React.useContext(LoaderContext);
 
   const [tokenAddress, setTokenAddress] = React.useState<string>('');
   const [csvData, setCsvData] = React.useState<CSVItem[] | undefined>(
@@ -51,13 +54,11 @@ export function AppPage() {
         rows.forEach(row => {
           const rowData = row.split(',');
           if (!rowData[0].startsWith('0x')) return;
-          console.log(rowData[1]);
           _csvData.push({
             address: rowData[0].trim(),
             amount: Number.parseFloat(rowData[1]),
           });
         });
-        console.log(_csvData);
         setCsvData(_csvData);
       } catch (e) {
         alert('Error wail parsing CSV');
@@ -72,10 +73,9 @@ export function AppPage() {
     if (!tokenAddress) return alert('Enter token address');
     if (!csvData) return alert('Upload a valid csv file');
 
-    const totalAmount = Object.values(csvData).reduce(
-      (previous, current) => previous + current.amount,
-      0,
-    );
+    setIsLoading(true);
+
+    const isPayingToken = isFeesInWETH === true;
 
     const jsonData = { data: csvData };
     const cid = await PinataService.pinToIPFS(jsonData);
@@ -84,7 +84,7 @@ export function AppPage() {
 
     const leaves = csvData.map(x => SHA256(JSON.stringify(x)));
     const tree = new MerkleTree(leaves, SHA256);
-    const root = tree.getRoot().toString('hex');
+    const root = tree.getRoot();
 
     const _startTime = new Date(
       startDate.getFullYear(),
@@ -105,35 +105,63 @@ export function AppPage() {
     const startDateUnix = Math.floor(_startTime.getTime() / 1000);
     const endDateUnix = Math.floor(_endTime.getTime() / 1000);
 
-    if (isFeesInWETH) {
-      await contract.createNewAirdrop(
-        isFeesInWETH,
-        tokenAddress,
-        totalAmount,
-        startDateUnix,
-        endDateUnix,
-        ipfsUrl,
-        root,
-        {
-          value: ethers.utils.parseEther(totalAmount.toString()),
-        },
-      );
-    } else {
-      const tokenContract = new ethers.Contract(
-        tokenAddress,
-        erc20ABI,
-        signer!,
-      );
-      await tokenContract.approve(CONTRACT_ADDRESS, MAX_APPROVE_AMOUNT).wait();
-      await contract.createNewAirdrop(
-        isFeesInWETH,
-        tokenAddress,
-        totalAmount,
-        startDateUnix,
-        endDateUnix,
-        ipfsUrl,
-        root,
-      );
+    try {
+      if (isPayingToken) {
+        const tokenContract = new ethers.Contract(
+          tokenAddress,
+          erc20ABI,
+          signer!,
+        );
+        const decimals = await tokenContract.decimals();
+        const totalAmount = Object.values(csvData).reduce(
+          (previous, current) =>
+            previous.add(
+              ethers.utils.parseUnits(current.amount.toString(), decimals),
+            ),
+          BigNumber.from(0),
+        );
+        await tokenContract
+          .approve(CONTRACT_ADDRESS, MAX_APPROVE_AMOUNT)
+          .wait();
+        await contract.createNewAirdrop(
+          isPayingToken,
+          tokenAddress,
+          totalAmount,
+          startDateUnix,
+          endDateUnix,
+          ipfsUrl,
+          root,
+        );
+      } else {
+        const totalAmount = Object.values(csvData).reduce(
+          (previous, current) =>
+            previous.add(ethers.utils.parseEther(current.amount.toString())),
+          BigNumber.from(0),
+        );
+
+        await contract
+          .createNewAirdrop(
+            isPayingToken,
+            tokenAddress,
+            totalAmount,
+            startDateUnix,
+            endDateUnix,
+            ipfsUrl,
+            root,
+            {
+              value: totalAmount,
+              gasLimit: 400000,
+            },
+          )
+          .wait();
+        alert('Success');
+      }
+
+      setIsLoading(false);
+    } catch (e) {
+      alert('Some error occured');
+      console.error(e);
+      setIsLoading(false);
     }
   }
 

@@ -25,15 +25,37 @@ export function App() {
         titleTemplate="ClaimKitty"
         defaultTitle="ClaimKitty"
         htmlAttributes={{ lang: i18n.language }}
-      >
-      </Helmet>
-
-      <Switch>
-        <Route exact path="/app" component={AppPage} />
-        <Route exact path="/user" component={UserPage} />
-        <Route component={NotFoundPage} />
-      </Switch>
+      ></Helmet>
+      <LoadingOverlay>
+        <Switch>
+          <Route exact path="/app" component={AppPage} />
+          <Route exact path="/user" component={UserPage} />
+          <Route component={NotFoundPage} />
+        </Switch>
+      </LoadingOverlay>
       <GlobalStyle />
     </BrowserRouter>
   );
 }
+
+export const LoaderContext = React.createContext<{
+  setIsLoading: (value: boolean) => void;
+}>({
+  setIsLoading: () => {},
+});
+const LoadingOverlay = ({ children }: { children: React.ReactNode }) => {
+  const [isLoading, setIsLoading] = React.useState<boolean>(false);
+
+  return (
+    <LoaderContext.Provider value={{ setIsLoading: setIsLoading }}>
+      <div>
+        {children}
+        {isLoading && (
+          <div className="loader-overlay">
+            <span className="spinner"></span>
+          </div>
+        )}
+      </div>
+    </LoaderContext.Provider>
+  );
+};
