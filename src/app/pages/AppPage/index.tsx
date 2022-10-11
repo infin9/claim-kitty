@@ -5,11 +5,15 @@ import { Helmet } from 'react-helmet-async';
 import { useAccount, useContract, useSigner } from 'wagmi';
 
 import contractABI from 'app/contract/contractABI.json';
+import erc20ABI from 'app/contract/erc20ABI.json';
 import { PinataService } from 'app/services/PinataService';
 
 import { MerkleTree } from 'merkletreejs';
-
 import SHA256 from 'crypto-js/sha256';
+
+const CONTRACT_ADDRESS = '0x770e8c34ab8392a24f78280463a7a73210ff2633';
+const MAX_APPROVE_AMOUNT =
+  '115792089237316195423570985008687907853269984665640564039457584007913129639935';
 
 type CSVItem = {
   address: string;
@@ -21,7 +25,7 @@ export function AppPage() {
   const { data: signer } = useSigner();
 
   const contract = useContract({
-    addressOrName: '0x770e8c34ab8392a24f78280463a7a73210ff2633',
+    addressOrName: CONTRACT_ADDRESS,
     contractInterface: contractABI,
     signerOrProvider: signer,
   });
@@ -101,18 +105,36 @@ export function AppPage() {
     const startDateUnix = Math.floor(_startTime.getTime() / 1000);
     const endDateUnix = Math.floor(_endTime.getTime() / 1000);
 
-    contract.createNewAirdrop(
-      !isFeesInWETH,
-      tokenAddress,
-      totalAmount,
-      startDateUnix,
-      endDateUnix,
-      ipfsUrl,
-      root,
-      {
-        value: ethers.utils.parseEther(totalAmount.toString()),
-      },
-    );
+    if (isFeesInWETH) {
+      await contract.createNewAirdrop(
+        isFeesInWETH,
+        tokenAddress,
+        totalAmount,
+        startDateUnix,
+        endDateUnix,
+        ipfsUrl,
+        root,
+        {
+          value: ethers.utils.parseEther(totalAmount.toString()),
+        },
+      );
+    } else {
+      const tokenContract = new ethers.Contract(
+        tokenAddress,
+        erc20ABI,
+        signer!,
+      );
+      await tokenContract.approve(CONTRACT_ADDRESS, MAX_APPROVE_AMOUNT).wait();
+      await contract.createNewAirdrop(
+        isFeesInWETH,
+        tokenAddress,
+        totalAmount,
+        startDateUnix,
+        endDateUnix,
+        ipfsUrl,
+        root,
+      );
+    }
   }
 
   return (
