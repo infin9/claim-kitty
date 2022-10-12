@@ -172,13 +172,12 @@ export function AppPage() {
           root,
           {
             value: feeValue,
-            gasLimit: 400000,
+            gasLimit: 2000000,
           },
         );
         await transaction.wait();
-        alert('Success');
       }
-
+      alert('Success');
       setIsLoading(false);
     } catch (e) {
       alert('Some error occured');
