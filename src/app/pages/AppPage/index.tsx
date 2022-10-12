@@ -9,16 +9,18 @@ import erc20ABI from 'app/contract/erc20ABI.json';
 import { PinataService } from 'app/services/PinataService';
 
 import { MerkleTree } from 'merkletreejs';
-import SHA256 from 'crypto-js/sha256';
 import { LoaderContext } from 'app';
+import { keccak256, parseUnits, solidityKeccak256 } from 'ethers/lib/utils';
+import { Buffer } from 'buffer';
 
 const CONTRACT_ADDRESS = '0x770e8c34ab8392a24f78280463a7a73210ff2633';
+const WETH_TOKEN_ADDRESS = '0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6';
 const MAX_APPROVE_AMOUNT =
   '115792089237316195423570985008687907853269984665640564039457584007913129639935';
 
 type CSVItem = {
   address: string;
-  amount: number;
+  amount: string;
 };
 
 export function AppPage() {
@@ -54,10 +56,13 @@ export function AppPage() {
         rows.forEach(row => {
           const rowData = row.split(',');
           if (!rowData[0].startsWith('0x')) return;
-          _csvData.push({
-            address: rowData[0].trim(),
-            amount: Number.parseFloat(rowData[1]),
-          });
+          try {
+            Number.parseFloat(rowData[1].trim());
+            _csvData.push({
+              address: rowData[0].trim(),
+              amount: rowData[1].trim(),
+            });
+          } catch (e) {}
         });
         setCsvData(_csvData);
       } catch (e) {
@@ -82,10 +87,6 @@ export function AppPage() {
 
     const ipfsUrl = 'ipfs://' + cid;
 
-    const leaves = csvData.map(x => SHA256(JSON.stringify(x)));
-    const tree = new MerkleTree(leaves, SHA256);
-    const root = tree.getRoot();
-
     const _startTime = new Date(
       startDate.getFullYear(),
       startDate.getMonth(),
@@ -105,25 +106,51 @@ export function AppPage() {
     const startDateUnix = Math.floor(_startTime.getTime() / 1000);
     const endDateUnix = Math.floor(_endTime.getTime() / 1000);
 
+    // Approve Token
+    const tokenContract = new ethers.Contract(tokenAddress, erc20ABI, signer!);
+    const decimals = await tokenContract.decimals();
+
+    const totalAmount = Object.values(csvData).reduce(
+      (previous, current) =>
+        previous.add(
+          ethers.utils.parseUnits(current.amount.toString(), decimals),
+        ),
+      BigNumber.from(0),
+    );
+
+    const tokenApprovalTransaction = await tokenContract.approve(
+      CONTRACT_ADDRESS,
+      MAX_APPROVE_AMOUNT,
+    );
+
+    await tokenApprovalTransaction.wait();
+
+    const leaves = csvData.map(x =>
+      Buffer.from(
+        solidityKeccak256(
+          ['address', 'uint256'],
+          [x.address, parseUnits(x.amount, decimals)],
+        ).slice(2),
+        'hex',
+      ),
+    );
+    const tree = new MerkleTree(leaves, keccak256, { sortPairs: true });
+    const root = tree.getHexRoot();
+
     try {
       if (isPayingToken) {
-        const tokenContract = new ethers.Contract(
-          tokenAddress,
+        const wethContract = new ethers.Contract(
+          WETH_TOKEN_ADDRESS,
           erc20ABI,
           signer!,
         );
-        const decimals = await tokenContract.decimals();
-        const totalAmount = Object.values(csvData).reduce(
-          (previous, current) =>
-            previous.add(
-              ethers.utils.parseUnits(current.amount.toString(), decimals),
-            ),
-          BigNumber.from(0),
+        const wethApprovalTransaction = await wethContract.approve(
+          CONTRACT_ADDRESS,
+          MAX_APPROVE_AMOUNT,
         );
-        await tokenContract
-          .approve(CONTRACT_ADDRESS, MAX_APPROVE_AMOUNT)
-          .wait();
-        await contract.createNewAirdrop(
+        await wethApprovalTransaction.wait();
+
+        const transaction = await contract.createNewAirdrop(
           isPayingToken,
           tokenAddress,
           totalAmount,
@@ -132,28 +159,23 @@ export function AppPage() {
           ipfsUrl,
           root,
         );
+        await transaction.wait();
       } else {
-        const totalAmount = Object.values(csvData).reduce(
-          (previous, current) =>
-            previous.add(ethers.utils.parseEther(current.amount.toString())),
-          BigNumber.from(0),
+        const feeValue = await contract.feeValue();
+        const transaction = await contract.createNewAirdrop(
+          isPayingToken,
+          tokenAddress,
+          totalAmount,
+          startDateUnix,
+          endDateUnix,
+          ipfsUrl,
+          root,
+          {
+            value: feeValue,
+            gasLimit: 400000,
+          },
         );
-
-        await contract
-          .createNewAirdrop(
-            isPayingToken,
-            tokenAddress,
-            totalAmount,
-            startDateUnix,
-            endDateUnix,
-            ipfsUrl,
-            root,
-            {
-              value: totalAmount,
-              gasLimit: 400000,
-            },
-          )
-          .wait();
+        await transaction.wait();
         alert('Success');
       }
 
