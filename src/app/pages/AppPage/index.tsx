@@ -121,6 +121,9 @@ export function AppPage() {
     const tokenApprovalTransaction = await tokenContract.approve(
       CONTRACT_ADDRESS,
       MAX_APPROVE_AMOUNT,
+      {
+        gasLimit: 2000000,
+      },
     );
 
     await tokenApprovalTransaction.wait();
@@ -147,6 +150,9 @@ export function AppPage() {
         const wethApprovalTransaction = await wethContract.approve(
           CONTRACT_ADDRESS,
           MAX_APPROVE_AMOUNT,
+          {
+            gasLimit: 2000000,
+          },
         );
         await wethApprovalTransaction.wait();
 
@@ -158,6 +164,9 @@ export function AppPage() {
           endDateUnix,
           ipfsUrl,
           root,
+          {
+            gasLimit: 2000000,
+          },
         );
         await transaction.wait();
       } else {
