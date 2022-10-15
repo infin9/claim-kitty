@@ -12,11 +12,11 @@ import { MerkleTree } from 'merkletreejs';
 import { LoaderContext } from 'app';
 import { keccak256, parseUnits, solidityKeccak256 } from 'ethers/lib/utils';
 import { Buffer } from 'buffer';
-
-const CONTRACT_ADDRESS = '0x770e8c34ab8392a24f78280463a7a73210ff2633';
-const WETH_TOKEN_ADDRESS = '0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6';
-const MAX_APPROVE_AMOUNT =
-  '115792089237316195423570985008687907853269984665640564039457584007913129639935';
+import {
+  CONTRACT_ADDRESS,
+  MAX_APPROVE_AMOUNT,
+  WETH_TOKEN_ADDRESS,
+} from 'app/globals';
 
 type CSVItem = {
   address: string;
