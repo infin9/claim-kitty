@@ -28,9 +28,7 @@ interface ClaimableAidrop {
   status: 'UNCLAIMED' | 'CLAIMING' | 'CLAIMED';
 }
 export function UserPage() {
-  const [searchToken, setSearchToken] = React.useState<string>(
-    '0x19e5cf711f1dc274a1535c537b6273e6f03a28b8',
-  );
+  const [searchToken, setSearchToken] = React.useState<string>('');
   const [isSearchingForAidrops, setIsSearchingForAidrops] =
     React.useState<boolean>(false);
   const [airdropSerachStatus, setAirdropSerachStatus] =
