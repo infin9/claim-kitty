@@ -25,6 +25,7 @@ interface ClaimableAidrop {
     address: string;
     amount: string;
   }[];
+  status: 'UNCLAIMED' | 'CLAIMING' | 'CLAIMED';
 }
 export function UserPage() {
   const [searchToken, setSearchToken] = React.useState<string>(
@@ -52,44 +53,62 @@ export function UserPage() {
     signerOrProvider: signer,
   });
 
-  async function claimAirdrop(airdrop: ClaimableAidrop) {
-    const tokenContract = new ethers.Contract(
-      airdrop.tokenAddress,
-      erc20ABI,
-      signer!,
-    );
-    const decimals = await tokenContract.decimals();
+  async function claimAirdrop(index: number) {
+    try {
+      const airdrop = claimableAidrops[index];
+      setClaimableAidrops(airdrops => {
+        airdrops[index].status = 'CLAIMING';
+        return [...airdrops];
+      });
+      const tokenContract = new ethers.Contract(
+        airdrop.tokenAddress,
+        erc20ABI,
+        signer!,
+      );
+      const decimals = await tokenContract.decimals();
 
-    const leaves = airdrop.userList.map(x =>
-      Buffer.from(
-        solidityKeccak256(
-          ['address', 'uint256'],
-          [x.address, parseUnits(x.amount, decimals)],
-        ).slice(2),
-        'hex',
-      ),
-    );
-    const amountParsed = parseUnits(airdrop.amount, decimals);
-    const tree = new MerkleTree(leaves, keccak256, { sortPairs: true });
-    const proof = tree.getHexProof(
-      Buffer.from(
-        solidityKeccak256(
-          ['address', 'uint256'],
-          [address, amountParsed],
-        ).slice(2),
-        'hex',
-      ),
-    );
-    const airdropContraact = new ethers.Contract(
-      airdrop.airdrop,
-      merkleChildABI,
-      signer!,
-    );
+      const leaves = airdrop.userList.map(x =>
+        Buffer.from(
+          solidityKeccak256(
+            ['address', 'uint256'],
+            [x.address, parseUnits(x.amount, decimals)],
+          ).slice(2),
+          'hex',
+        ),
+      );
+      const amountParsed = parseUnits(airdrop.amount, decimals);
+      const tree = new MerkleTree(leaves, keccak256, { sortPairs: true });
+      const proof = tree.getHexProof(
+        Buffer.from(
+          solidityKeccak256(
+            ['address', 'uint256'],
+            [address, amountParsed],
+          ).slice(2),
+          'hex',
+        ),
+      );
+      const airdropContract = new ethers.Contract(
+        airdrop.airdrop,
+        merkleChildABI,
+        signer!,
+      );
 
-    const transaction = await airdropContraact.claim(amountParsed, proof, {
-      gasLimit: 2000000,
-    });
-    const response = await transaction.wait();
+      const transaction = await airdropContract.claim(amountParsed, proof, {
+        gasLimit: 2000000,
+      });
+      const response = await transaction.wait();
+      setClaimableAidrops(airdrops => {
+        airdrops[index].status = 'CLAIMED';
+        return [...airdrops];
+      });
+    } catch (e) {
+      alert('Some error occured');
+      console.error(e);
+      setClaimableAidrops(airdrops => {
+        airdrops[index].status = 'UNCLAIMED';
+        return [...airdrops];
+      });
+    }
   }
 
   async function fetchAirdropData(
@@ -101,17 +120,28 @@ export function UserPage() {
     const cid = ipfsUrl.slice(7, ipfsUrl.length);
     const response = await fetch('https://cloudflare-ipfs.com/ipfs/' + cid);
     const usersList = (await response.json()).data;
+
+    const airdropContract = new ethers.Contract(
+      airdropId,
+      merkleChildABI,
+      signer!,
+    );
+
     usersList.forEach(user => {
       if (address === user.address) {
-        setClaimableAidrops(claimableAidrops => [
-          ...claimableAidrops,
-          {
-            tokenAddress: tokenAddress,
-            airdrop: airdropId,
-            amount: user.amount,
-            userList: usersList,
-          },
-        ]);
+        airdropContract.userClaimed(address).then((hasClaimed: boolean) => {
+          if (hasClaimed === false)
+            setClaimableAidrops(claimableAidrops => [
+              ...claimableAidrops,
+              {
+                tokenAddress: tokenAddress,
+                airdrop: airdropId,
+                amount: user.amount,
+                userList: usersList,
+                status: 'UNCLAIMED',
+              },
+            ]);
+        });
       }
     });
     callback();
@@ -121,6 +151,7 @@ export function UserPage() {
       if (address === undefined) return alert('Connect your wallet to use');
       const token = searchToken.trim();
       if (token === '') return alert('Enter token');
+      setClaimableAidrops([]);
       setIsSearchingForAidrops(true);
       setAirdropSerachStatus('Searching...');
 
@@ -135,22 +166,12 @@ export function UserPage() {
       });
 
       let pendingAirdrops = [...aidropIds];
-      setAirdropSerachStatus(
-        'Found. Fetching details... (0/' + aidropIds.length + ')',
-      );
+      setAirdropSerachStatus('Fetching details...');
       const airdropFetchComplete = (airdropId: string) => {
         pendingAirdrops = pendingAirdrops.filter(e => e !== airdropId);
-        setAirdropSerachStatus(
-          'Fetching details... (' +
-            (aidropIds.length - pendingAirdrops.length) +
-            '/' +
-            aidropIds.length +
-            ')',
-        );
         if (pendingAirdrops.length === 0) {
           setTimeout(() => {
             setIsSearchingForAidrops(false);
-            setAirdropSerachStatus('');
           }, 1000);
         }
       };
@@ -200,15 +221,23 @@ export function UserPage() {
                 <div className="claimPanel" key={'drop' + index}>
                   {tokenNames[drop.tokenAddress] ?? '(Token Name Loading)'} -{' '}
                   {drop.amount}{' '}
-                  <div
-                    className="button"
-                    id="claimButton"
-                    onClick={() => {
-                      claimAirdrop(drop);
-                    }}
-                  >
-                    Claim
-                  </div>
+                  {drop.status === 'UNCLAIMED' && (
+                    <div
+                      className="button"
+                      id="claimButton"
+                      onClick={() => {
+                        claimAirdrop(index);
+                      }}
+                    >
+                      Claim
+                    </div>
+                  )}
+                  {drop.status === 'CLAIMING' && (
+                    <span style={{ float: 'right' }}>CLAIMING...</span>
+                  )}
+                  {drop.status === 'CLAIMED' && (
+                    <span style={{ float: 'right' }}>CLAIMED</span>
+                  )}
                 </div>
               ))}
             </div>
