@@ -31,7 +31,7 @@ export function AppPage() {
     signerOrProvider: signer,
   });
 
-  const { setIsLoading } = React.useContext(LoaderContext);
+  const { setIsLoading, setLoadingMessage } = React.useContext(LoaderContext);
 
   const [tokenAddress, setTokenAddress] = React.useState<string>('');
   const [csvData, setCsvData] = React.useState<CSVItem[] | undefined>(
@@ -71,12 +71,14 @@ export function AppPage() {
   }
 
   async function handleSubmit() {
+    setLoadingMessage(undefined);
     if (!address) return alert('No wallet connected');
 
     if (!tokenAddress) return alert('Enter token address');
     if (!csvData) return alert('Upload a valid csv file');
 
     setIsLoading(true);
+    setLoadingMessage('Uploading File');
 
     const isPayingToken = isFeesInWETH === true;
 
@@ -105,6 +107,7 @@ export function AppPage() {
     const endDateUnix = Math.floor(_endTime.getTime() / 1000);
 
     // Approve Token
+
     const tokenContract = new ethers.Contract(tokenAddress, erc20ABI, signer!);
     const decimals = await tokenContract.decimals();
 
@@ -117,6 +120,8 @@ export function AppPage() {
     );
 
     // const allo
+    setLoadingMessage('Waiting for token Approval');
+
     const tokenApprovalTransaction = await tokenContract.approve(
       CONTRACT_ADDRESS,
       MAX_APPROVE_AMOUNT,
@@ -124,7 +129,7 @@ export function AppPage() {
         gasLimit: 2000000,
       },
     );
-
+    setLoadingMessage('Processing...');
     await tokenApprovalTransaction.wait();
 
     const tree = createMerkleTree(
@@ -139,6 +144,8 @@ export function AppPage() {
           erc20ABI,
           signer!,
         );
+
+        setLoadingMessage('Waiting for WETH Approval...');
         const wethApprovalTransaction = await wethContract.approve(
           CONTRACT_ADDRESS,
           MAX_APPROVE_AMOUNT,
@@ -146,8 +153,10 @@ export function AppPage() {
             gasLimit: 2000000,
           },
         );
+        setLoadingMessage('Processing...');
         await wethApprovalTransaction.wait();
 
+        setLoadingMessage('Confirm Transaction');
         const transaction = await contract.createNewAirdrop(
           isPayingToken,
           tokenAddress,
@@ -160,9 +169,11 @@ export function AppPage() {
             gasLimit: 2000000,
           },
         );
+        setLoadingMessage('Creating Airdrop...');
         await transaction.wait();
       } else {
         const feeValue = await contract.feeValue();
+        setLoadingMessage('Confirm Transaction');
         const transaction = await contract.createNewAirdrop(
           isPayingToken,
           tokenAddress,
@@ -176,6 +187,7 @@ export function AppPage() {
             gasLimit: 2000000,
           },
         );
+        setLoadingMessage('Creating Airdrop...');
         await transaction.wait();
       }
       alert('Success');
@@ -183,6 +195,7 @@ export function AppPage() {
     } catch (e) {
       alert('Some error occured');
       console.error(e);
+      setLoadingMessage(undefined);
       setIsLoading(false);
     }
   }

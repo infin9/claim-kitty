@@ -42,19 +42,25 @@ export function App() {
 
 export const LoaderContext = React.createContext<{
   setIsLoading: (value: boolean) => void;
+  setLoadingMessage: (value: string | undefined) => void;
 }>({
   setIsLoading: () => {},
+  setLoadingMessage: () => {},
 });
 const LoadingOverlay = ({ children }: { children: React.ReactNode }) => {
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const [loadingMessage, setLoadingMessage] = React.useState<
+    string | undefined
+  >();
 
   return (
-    <LoaderContext.Provider value={{ setIsLoading: setIsLoading }}>
+    <LoaderContext.Provider value={{ setIsLoading, setLoadingMessage }}>
       <div>
         {children}
         {isLoading && (
           <div className="loader-overlay">
             <span className="spinner"></span>
+            {loadingMessage && <h3>{loadingMessage}</h3>}
           </div>
         )}
       </div>
