@@ -15,6 +15,7 @@ import {
   WETH_TOKEN_ADDRESS,
 } from 'app/globals';
 import { createLeaf, createMerkleTree } from 'app/merkleTree';
+import { Link } from 'react-router-dom';
 
 type CSVItem = {
   address: string;
@@ -224,6 +225,11 @@ export function AppPage() {
             handleSubmit();
           }}
         >
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 20 }}>
+            <a href="/app">[Create Airdrop]</a>
+            <a href="/user">Collect Airdrop</a>
+          </div>
+          <br />
           <div className="panel">
             <h1>1. Insert your Wallet.</h1>
             <p>

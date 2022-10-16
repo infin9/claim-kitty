@@ -246,6 +246,11 @@ export function UserPage() {
     <>
       <Header />
       <div className="container" style={{ bottom: 30 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 20 }}>
+          <a href="/app">Create Airdrop</a>
+          <a href="/user">[Collect Airdrop]</a>
+        </div>
+        <br />
         <div className="panel">
           <h1>
             Welcome to ClaimKitty. <br />
