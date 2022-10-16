@@ -341,7 +341,15 @@ export function UserPage() {
                   </div>
                 ))}
               </div>
-              <div className="button" id="claimAll">
+              <div
+                className="button"
+                id="claimAll"
+                onClick={() => {
+                  creatorClaimableAidrops.forEach((drop, index) =>
+                    creatorClaim(index),
+                  );
+                }}
+              >
                 Claim All
               </div>
             </>
