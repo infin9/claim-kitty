@@ -103,9 +103,19 @@ export function AppPage() {
       59,
       59,
     );
+
     const startDateUnix = Math.floor(_startTime.getTime() / 1000);
     const endDateUnix = Math.floor(_endTime.getTime() / 1000);
 
+    const diffDays = Math.ceil(
+      endDateUnix - startDateUnix / (1000 * 60 * 60 * 24),
+    );
+    if (diffDays < 14 || diffDays > 90) {
+      alert('Time range should be atleast 14 days and atmost 90 days');
+      setLoadingMessage(undefined);
+      setIsLoading(false);
+      return;
+    }
     // Approve Token
 
     const tokenContract = new ethers.Contract(tokenAddress, erc20ABI, signer!);
