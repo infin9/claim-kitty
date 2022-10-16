@@ -302,21 +302,21 @@ export function UserPage() {
           )}
         </div>
 
-        <div className="panel">
-          <h1>Claim left Tokens from your own Kitties</h1>
-          <p>
-            {' '}
-            <strong>Please Note:</strong> Your left tokens will be split into
-            three tranches in order to avoid any dump of the Token. First
-            tranche will be available starting from the next day of the AirDrop
-            end. The second one three months after and the third one after six
-            months. You will have 2 weeks to claim your tokens. <br />{' '}
-            <strong>Example:</strong> If for example your AirDrop ends in 31/12,
-            in 01/01 you will be able to claim the first tranche of your tokens
-            until 15/01. For the second tranche from 01/04 to 15/04 and the last
-            one from 01/07 to 15/07.{' '}
-          </p>
-          {creatorClaimableAidrops.length > 0 && (
+        {creatorClaimableAidrops.length > 0 && (
+          <div className="panel">
+            <h1>Claim left Tokens from your own Kitties</h1>
+            <p>
+              {' '}
+              <strong>Please Note:</strong> Your left tokens will be split into
+              three tranches in order to avoid any dump of the Token. First
+              tranche will be available starting from the next day of the
+              AirDrop end. The second one three months after and the third one
+              after six months. You will have 2 weeks to claim your tokens.{' '}
+              <br /> <strong>Example:</strong> If for example your AirDrop ends
+              in 31/12, in 01/01 you will be able to claim the first tranche of
+              your tokens until 15/01. For the second tranche from 01/04 to
+              15/04 and the last one from 01/07 to 15/07.{' '}
+            </p>
             <>
               <div className="claimList">
                 <p>
@@ -357,8 +357,8 @@ export function UserPage() {
                 Claim All
               </div>
             </>
-          )}
-        </div>
+          </div>
+        )}
         <p>
           <br />
         </p>
