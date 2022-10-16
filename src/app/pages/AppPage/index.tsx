@@ -8,10 +8,7 @@ import contractABI from 'app/contract/contractABI.json';
 import erc20ABI from 'app/contract/erc20ABI.json';
 import { PinataService } from 'app/services/PinataService';
 
-import { MerkleTree } from 'merkletreejs';
 import { LoaderContext } from 'app';
-import { keccak256, parseUnits, solidityKeccak256 } from 'ethers/lib/utils';
-import { Buffer } from 'buffer';
 import {
   CONTRACT_ADDRESS,
   MAX_APPROVE_AMOUNT,

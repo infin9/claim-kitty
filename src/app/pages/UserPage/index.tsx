@@ -7,7 +7,7 @@ import merkleChildABI from 'app/contract/merkleChildABI.json';
 import erc20ABI from 'app/contract/erc20ABI.json';
 import { parseUnits } from 'ethers/lib/utils';
 import { createLeaf, createMerkleTree } from 'app/merkleTree';
-import { ethers } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 
 class SimpleError extends Error {
   message: string;
@@ -32,6 +32,7 @@ interface CreatorClaimableAidrop {
   airdrop: string;
   amount: string;
   status: 'UNCLAIMED' | 'CLAIMING' | 'CLAIMED';
+  roundId: number;
 }
 export function UserPage() {
   const [searchToken, setSearchToken] = React.useState<string>('');
@@ -59,6 +60,36 @@ export function UserPage() {
     contractInterface: contractABI,
     signerOrProvider: signer,
   });
+
+  async function creatorClaim(index: number) {
+    try {
+      const airdrop = creatorClaimableAidrops[index];
+      setCreatorClaimableAidrops(airdrops => {
+        airdrops[index].status = 'CLAIMING';
+        return [...airdrops];
+      });
+      const airdropContract = new ethers.Contract(
+        airdrop.airdrop,
+        merkleChildABI,
+        signer!,
+      );
+      const transaction = await airdropContract.creatorClaim(airdrop.roundId, {
+        gasLimit: 2000000,
+      });
+      const response = await transaction.wait();
+      setClaimableAidrops(airdrops => {
+        airdrops[index].status = 'CLAIMED';
+        return [...airdrops];
+      });
+    } catch (e) {
+      alert('Some error occured');
+      console.error(e);
+      setClaimableAidrops(airdrops => {
+        airdrops[index].status = 'UNCLAIMED';
+        return [...airdrops];
+      });
+    }
+  }
 
   async function claimAirdrop(index: number) {
     try {
@@ -125,41 +156,49 @@ export function UserPage() {
     );
 
     const tokenContract = new ethers.Contract(tokenAddress, erc20ABI, signer!);
+    const decimals = await tokenContract.decimals();
 
+    // User Claim
+    const _userClaimableDrops: ClaimableAidrop[] = [];
     usersList.forEach(async user => {
       if (address !== user.address) return;
-      const canUserClaim = await tokenContract.userClaimStatus(address);
+      const canUserClaim = await airdropContract.userClaimStatus(address);
       if (canUserClaim) {
-        setClaimableAidrops(claimableAidrops => [
-          ...claimableAidrops,
-          {
-            tokenAddress: tokenAddress,
-            airdrop: airdropId,
-            amount: user.amount,
-            userList: usersList,
-            status: 'UNCLAIMED',
-          },
-        ]);
-        return;
-      }
-      const creatorClaimStatus: boolean[] =
-        await tokenContract.creatorClaimStatus();
-      const roundId = creatorClaimStatus.indexOf(true);
-
-      if (roundId >= 0) {
-        setClaimableAidrops(claimableAidrops => [
-          ...claimableAidrops,
-          {
-            tokenAddress: tokenAddress,
-            airdrop: airdropId,
-            amount: user.amount,
-            userList: usersList,
-            status: 'UNCLAIMED',
-          },
-        ]);
-        return;
+        _userClaimableDrops.push({
+          tokenAddress: tokenAddress,
+          airdrop: airdropId,
+          amount: user.amount,
+          userList: usersList,
+          status: 'UNCLAIMED',
+        });
       }
     });
+
+    // Creator Claim
+    const creatorClaimStatus: boolean[] =
+      await airdropContract.creatorClaimStatus();
+    const roundId = creatorClaimStatus.indexOf(true);
+    const _creatorClaimableDrops: CreatorClaimableAidrop[] = [];
+
+    if (roundId >= 0) {
+      let totalAmount: BigNumber = await airdropContract.nonClaimedFunds();
+      if (totalAmount.isZero()) {
+        totalAmount = await tokenContract.balanceOf(airdropId);
+      }
+      const amount = totalAmount.div(4);
+      console.log(amount);
+      _creatorClaimableDrops.push({
+        tokenAddress: tokenAddress,
+        airdrop: airdropId,
+        amount: ethers.utils.formatUnits(totalAmount, decimals),
+        status: 'UNCLAIMED',
+        roundId: roundId,
+      });
+    }
+
+    setClaimableAidrops(drops => [...drops, ..._userClaimableDrops]);
+    setCreatorClaimableAidrops(drops => [...drops, ..._creatorClaimableDrops]);
+
     callback();
   }
   const searchForAirdrops = async () => {
@@ -168,6 +207,7 @@ export function UserPage() {
       const token = searchToken.trim();
       if (token === '') return alert('Enter token');
       setClaimableAidrops([]);
+      setCreatorClaimableAidrops([]);
       setIsSearchingForAidrops(true);
       setAirdropSerachStatus('Searching...');
 
@@ -186,9 +226,7 @@ export function UserPage() {
       const airdropFetchComplete = (airdropId: string) => {
         pendingAirdrops = pendingAirdrops.filter(e => e !== airdropId);
         if (pendingAirdrops.length === 0) {
-          setTimeout(() => {
-            setIsSearchingForAidrops(false);
-          }, 1000);
+          setIsSearchingForAidrops(false);
         }
       };
       aidropIds.forEach(airdrop =>
@@ -278,16 +316,28 @@ export function UserPage() {
             <>
               <div className="claimList">
                 <p>
-                  <b>Token Name - Amount - Claimable Until</b>
+                  <b>Token Name - Amount</b>
                 </p>
-                {creatorClaimableAidrops.map(drop => (
-                  <div className="claimPanel">
+                {creatorClaimableAidrops.map((drop, index) => (
+                  <div className="claimPanel" key={'drop-creator-' + index}>
                     {tokenNames[drop.tokenAddress] ?? '(Token Name Loading)'}
                     {' - '}
-                    210.3
-                    <div className="button" id="claimButton">
-                      Claim
-                    </div>
+                    {drop.amount}
+                    {drop.status === 'UNCLAIMED' && (
+                      <div
+                        className="button"
+                        id="claimButton"
+                        onClick={() => creatorClaim(index)}
+                      >
+                        Claim
+                      </div>
+                    )}
+                    {drop.status === 'CLAIMING' && (
+                      <span style={{ float: 'right' }}>CLAIMING...</span>
+                    )}
+                    {drop.status === 'CLAIMED' && (
+                      <span style={{ float: 'right' }}>CLAIMED</span>
+                    )}
                   </div>
                 ))}
               </div>
