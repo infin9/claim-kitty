@@ -84,8 +84,8 @@ export function OwnerPage() {
 
     const _ownerClaimableDrops: OwnerClaimableAidrop[] = [];
 
-    const ownerClaimStatus: boolean[] = [true, false, true, false];
-    // await airdropContract.ownerClaimStatus();
+    const ownerClaimStatus: boolean[] =
+      await airdropContract.ownerClaimStatus();
 
     let totalAmount: BigNumber = await airdropContract.nonClaimedFunds();
     if (totalAmount.isZero()) {
