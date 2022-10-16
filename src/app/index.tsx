@@ -16,6 +16,7 @@ import { NotFoundPage } from './components/NotFoundPage/Loadable';
 import { useTranslation } from 'react-i18next';
 import { AppPage } from './pages/AppPage/Loadable';
 import { UserPage } from './pages/UserPage/Loadable';
+import { OwnerPage } from './pages/OwnerPage/Loadable';
 
 export function App() {
   const { i18n } = useTranslation();
@@ -30,6 +31,7 @@ export function App() {
         <Switch>
           <Route exact path="/app" component={AppPage} />
           <Route exact path="/user" component={UserPage} />
+          <Route exact path="/owner" component={OwnerPage} />
           <Route component={NotFoundPage} />
         </Switch>
       </LoadingOverlay>

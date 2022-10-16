@@ -186,11 +186,10 @@ export function UserPage() {
         totalAmount = await tokenContract.balanceOf(airdropId);
       }
       const amount = totalAmount.div(4);
-      console.log(amount);
       _creatorClaimableDrops.push({
         tokenAddress: tokenAddress,
         airdrop: airdropId,
-        amount: ethers.utils.formatUnits(totalAmount, decimals),
+        amount: ethers.utils.formatUnits(amount, decimals),
         status: 'UNCLAIMED',
         roundId: roundId,
       });
@@ -273,7 +272,7 @@ export function UserPage() {
             <div className="claimList" style={{ marginTop: 20 }}>
               {claimableAidrops.map((drop, index) => (
                 <div className="claimPanel" key={'drop' + index}>
-                  {tokenNames[drop.tokenAddress] ?? '(Token Name Loading)'} -{' '}
+                  {tokenNames[drop.tokenAddress] ?? drop.tokenAddress} -{' '}
                   {drop.amount}{' '}
                   {drop.status === 'UNCLAIMED' && (
                     <div
@@ -320,7 +319,7 @@ export function UserPage() {
                 </p>
                 {creatorClaimableAidrops.map((drop, index) => (
                   <div className="claimPanel" key={'drop-creator-' + index}>
-                    {tokenNames[drop.tokenAddress] ?? '(Token Name Loading)'}
+                    {tokenNames[drop.tokenAddress] ?? drop.tokenAddress}
                     {' - '}
                     {drop.amount}
                     {drop.status === 'UNCLAIMED' && (
