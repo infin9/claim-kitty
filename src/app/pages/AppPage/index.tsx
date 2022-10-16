@@ -17,6 +17,7 @@ import {
   MAX_APPROVE_AMOUNT,
   WETH_TOKEN_ADDRESS,
 } from 'app/globals';
+import { createLeaf, createMerkleTree } from 'app/merkleTree';
 
 type CSVItem = {
   address: string;
@@ -118,6 +119,7 @@ export function AppPage() {
       BigNumber.from(0),
     );
 
+    // const allo
     const tokenApprovalTransaction = await tokenContract.approve(
       CONTRACT_ADDRESS,
       MAX_APPROVE_AMOUNT,
@@ -128,16 +130,9 @@ export function AppPage() {
 
     await tokenApprovalTransaction.wait();
 
-    const leaves = csvData.map(x =>
-      Buffer.from(
-        solidityKeccak256(
-          ['address', 'uint256'],
-          [x.address, parseUnits(x.amount, decimals)],
-        ).slice(2),
-        'hex',
-      ),
+    const tree = createMerkleTree(
+      csvData.map(x => createLeaf(x.address, x.amount, decimals)),
     );
-    const tree = new MerkleTree(leaves, keccak256, { sortPairs: true });
     const root = tree.getHexRoot();
 
     try {

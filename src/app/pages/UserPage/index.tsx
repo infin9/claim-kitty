@@ -5,10 +5,9 @@ import { useAccount, useContract, useSigner } from 'wagmi';
 import contractABI from 'app/contract/contractABI.json';
 import merkleChildABI from 'app/contract/merkleChildABI.json';
 import erc20ABI from 'app/contract/erc20ABI.json';
+import { parseUnits } from 'ethers/lib/utils';
+import { createLeaf, createMerkleTree } from 'app/merkleTree';
 import { ethers } from 'ethers';
-import { keccak256, parseUnits, solidityKeccak256 } from 'ethers/lib/utils';
-import MerkleTree from 'merkletreejs';
-import { Buffer } from 'buffer';
 
 class SimpleError extends Error {
   message: string;
@@ -27,6 +26,13 @@ interface ClaimableAidrop {
   }[];
   status: 'UNCLAIMED' | 'CLAIMING' | 'CLAIMED';
 }
+
+interface CreatorClaimableAidrop {
+  tokenAddress: string;
+  airdrop: string;
+  amount: string;
+  status: 'UNCLAIMED' | 'CLAIMING' | 'CLAIMED';
+}
 export function UserPage() {
   const [searchToken, setSearchToken] = React.useState<string>('');
   const [isSearchingForAidrops, setIsSearchingForAidrops] =
@@ -36,6 +42,9 @@ export function UserPage() {
 
   const [claimableAidrops, setClaimableAidrops] = React.useState<
     ClaimableAidrop[]
+  >([]);
+  const [creatorClaimableAidrops, setCreatorClaimableAidrops] = React.useState<
+    CreatorClaimableAidrop[]
   >([]);
 
   const [tokenNames, setTokenNames] = React.useState<{ [p: string]: string }>(
@@ -64,26 +73,12 @@ export function UserPage() {
         signer!,
       );
       const decimals = await tokenContract.decimals();
-
-      const leaves = airdrop.userList.map(x =>
-        Buffer.from(
-          solidityKeccak256(
-            ['address', 'uint256'],
-            [x.address, parseUnits(x.amount, decimals)],
-          ).slice(2),
-          'hex',
-        ),
+      const tree = createMerkleTree(
+        airdrop.userList.map(x => createLeaf(x.address, x.amount, decimals)),
       );
-      const amountParsed = parseUnits(airdrop.amount, decimals);
-      const tree = new MerkleTree(leaves, keccak256, { sortPairs: true });
+
       const proof = tree.getHexProof(
-        Buffer.from(
-          solidityKeccak256(
-            ['address', 'uint256'],
-            [address, amountParsed],
-          ).slice(2),
-          'hex',
-        ),
+        createLeaf(address!, airdrop.amount, decimals),
       );
       const airdropContract = new ethers.Contract(
         airdrop.airdrop,
@@ -91,9 +86,13 @@ export function UserPage() {
         signer!,
       );
 
-      const transaction = await airdropContract.claim(amountParsed, proof, {
-        gasLimit: 2000000,
-      });
+      const transaction = await airdropContract.claim(
+        parseUnits(airdrop.amount, decimals),
+        proof,
+        {
+          gasLimit: 2000000,
+        },
+      );
       const response = await transaction.wait();
       setClaimableAidrops(airdrops => {
         airdrops[index].status = 'CLAIMED';
@@ -125,21 +124,40 @@ export function UserPage() {
       signer!,
     );
 
-    usersList.forEach(user => {
-      if (address === user.address) {
-        airdropContract.userClaimed(address).then((hasClaimed: boolean) => {
-          if (hasClaimed === false)
-            setClaimableAidrops(claimableAidrops => [
-              ...claimableAidrops,
-              {
-                tokenAddress: tokenAddress,
-                airdrop: airdropId,
-                amount: user.amount,
-                userList: usersList,
-                status: 'UNCLAIMED',
-              },
-            ]);
-        });
+    const tokenContract = new ethers.Contract(tokenAddress, erc20ABI, signer!);
+
+    usersList.forEach(async user => {
+      if (address !== user.address) return;
+      const canUserClaim = await tokenContract.userClaimStatus(address);
+      if (canUserClaim) {
+        setClaimableAidrops(claimableAidrops => [
+          ...claimableAidrops,
+          {
+            tokenAddress: tokenAddress,
+            airdrop: airdropId,
+            amount: user.amount,
+            userList: usersList,
+            status: 'UNCLAIMED',
+          },
+        ]);
+        return;
+      }
+      const creatorClaimStatus: boolean[] =
+        await tokenContract.creatorClaimStatus();
+      const roundId = creatorClaimStatus.indexOf(true);
+
+      if (roundId >= 0) {
+        setClaimableAidrops(claimableAidrops => [
+          ...claimableAidrops,
+          {
+            tokenAddress: tokenAddress,
+            airdrop: airdropId,
+            amount: user.amount,
+            userList: usersList,
+            status: 'UNCLAIMED',
+          },
+        ]);
+        return;
       }
     });
     callback();
@@ -256,20 +274,28 @@ export function UserPage() {
             until 15/01. For the second tranche from 01/04 to 15/04 and the last
             one from 01/07 to 15/07.{' '}
           </p>
-          <div className="claimList">
-            <p>
-              <strong>Token Name - Amount - Claimable Until</strong>
-            </p>
-            <div className="claimPanel">
-              AirDrop Token 1 - 210.3 - 06/06
-              <div className="button" id="claimButton">
-                Claim
+          {creatorClaimableAidrops.length > 0 && (
+            <>
+              <div className="claimList">
+                <p>
+                  <b>Token Name - Amount - Claimable Until</b>
+                </p>
+                {creatorClaimableAidrops.map(drop => (
+                  <div className="claimPanel">
+                    {tokenNames[drop.tokenAddress] ?? '(Token Name Loading)'}
+                    {' - '}
+                    210.3
+                    <div className="button" id="claimButton">
+                      Claim
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
-          </div>
-          <div className="button" id="claimAll">
-            Claim All
-          </div>
+              <div className="button" id="claimAll">
+                Claim All
+              </div>
+            </>
+          )}
         </div>
         <p>
           <br />
