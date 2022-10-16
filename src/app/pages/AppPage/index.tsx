@@ -108,9 +108,8 @@ export function AppPage() {
     const startDateUnix = Math.floor(_startTime.getTime() / 1000);
     const endDateUnix = Math.floor(_endTime.getTime() / 1000);
 
-    const diffDays = Math.ceil(
-      endDateUnix - startDateUnix / (1000 * 60 * 60 * 24),
-    );
+    const diffDays = Math.ceil((endDateUnix - startDateUnix) / (60 * 60 * 24));
+    console.log(diffDays);
     if (diffDays < 14 || diffDays > 90) {
       alert('Time range should be atleast 14 days and atmost 90 days');
       setLoadingMessage(undefined);
@@ -131,17 +130,21 @@ export function AppPage() {
     );
 
     // const allo
-    setLoadingMessage('Waiting for token Approval');
 
-    const tokenApprovalTransaction = await tokenContract.approve(
-      CONTRACT_ADDRESS,
-      MAX_APPROVE_AMOUNT,
-      {
-        gasLimit: 2000000,
-      },
-    );
-    setLoadingMessage('Processing...');
-    await tokenApprovalTransaction.wait();
+    if (
+      totalAmount.gt(await tokenContract.allowance(address, CONTRACT_ADDRESS))
+    ) {
+      setLoadingMessage('Waiting for token allowance approval');
+      const tokenApprovalTransaction = await tokenContract.approve(
+        CONTRACT_ADDRESS,
+        MAX_APPROVE_AMOUNT,
+        {
+          gasLimit: 2000000,
+        },
+      );
+      setLoadingMessage('Processing...');
+      await tokenApprovalTransaction.wait();
+    }
 
     const tree = createMerkleTree(
       csvData.map(x => createLeaf(x.address, x.amount, decimals)),
@@ -156,16 +159,22 @@ export function AppPage() {
           signer!,
         );
 
-        setLoadingMessage('Waiting for WETH Approval...');
-        const wethApprovalTransaction = await wethContract.approve(
-          CONTRACT_ADDRESS,
-          MAX_APPROVE_AMOUNT,
-          {
-            gasLimit: 2000000,
-          },
-        );
-        setLoadingMessage('Processing...');
-        await wethApprovalTransaction.wait();
+        if (
+          ethers.utils
+            .parseEther('100')
+            .gt(await wethContract.allowance(address, CONTRACT_ADDRESS))
+        ) {
+          setLoadingMessage('Waiting for WETH Approval...');
+          const wethApprovalTransaction = await wethContract.approve(
+            CONTRACT_ADDRESS,
+            MAX_APPROVE_AMOUNT,
+            {
+              gasLimit: 2000000,
+            },
+          );
+          setLoadingMessage('Processing...');
+          await wethApprovalTransaction.wait();
+        }
 
         setLoadingMessage('Confirm Transaction');
         const transaction = await contract.createNewAirdrop(
