@@ -117,10 +117,12 @@ export function UserPage() {
         signer!,
       );
 
+      const claimFee = await contract.claimFee();
       const transaction = await airdropContract.claim(
         parseUnits(airdrop.amount, decimals),
         proof,
         {
+          value: claimFee,
           gasLimit: 2000000,
         },
       );
