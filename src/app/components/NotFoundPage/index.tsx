@@ -2,6 +2,7 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 import { P } from './P';
 import { Helmet } from 'react-helmet-async';
+import { Header } from '../Header';
 
 export function NotFoundPage() {
   return (
@@ -11,6 +12,7 @@ export function NotFoundPage() {
         <meta name="description" content="Page not found" />
       </Helmet>
       <Wrapper>
+        <Header />
         <Title>
           4
           <span role="img" aria-label="Crying Face">

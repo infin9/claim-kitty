@@ -103,8 +103,6 @@ export function OwnerPage() {
         roundId: roundId,
       });
     });
-
-    console.log(_ownerClaimableDrops);
     setOwnerClaimableAidrops(drops => [...drops, ..._ownerClaimableDrops]);
 
     callback();

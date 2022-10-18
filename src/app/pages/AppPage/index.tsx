@@ -15,7 +15,6 @@ import {
   WETH_TOKEN_ADDRESS,
 } from 'app/globals';
 import { createLeaf, createMerkleTree } from 'app/merkleTree';
-import { Link } from 'react-router-dom';
 
 type CSVItem = {
   address: string;
@@ -38,12 +37,16 @@ export function AppPage() {
   const [csvData, setCsvData] = React.useState<CSVItem[] | undefined>(
     undefined,
   );
+  const [selectedFileName, setSelectedFileName] = React.useState<
+    string | undefined
+  >(undefined);
   const [startDate, setStartDate] = React.useState<Date>(new Date());
   const [endDate, setEndDate] = React.useState<Date>(new Date());
 
   const [isFeesInWETH, setIsFeesInWETH] = React.useState<boolean>(false);
 
   function handleCSVUpdate(file?: File | null) {
+    setSelectedFileName(undefined);
     if (!file) return;
     const reader = new FileReader();
     reader.onload = e => {
@@ -64,7 +67,9 @@ export function AppPage() {
           } catch (e) {}
         });
         setCsvData(_csvData);
+        setSelectedFileName(file.name);
       } catch (e) {
+        setSelectedFileName(undefined);
         alert('Error wail parsing CSV');
       }
     };
@@ -283,17 +288,33 @@ export function AppPage() {
               place with a dot. We won't store any of your CSV Data.
             </p>
 
-            <label className="fileUploader">
-              <input
-                type="file"
-                accept=".csv"
-                id="demoPick"
-                onChange={e => {
-                  handleCSVUpdate(e.target.files?.item(0));
-                }}
-              />
-              Upload File
-            </label>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                position: 'relative',
+                top: 20,
+              }}
+            >
+              <label className="fileUploader">
+                <input
+                  type="file"
+                  accept=".csv"
+                  id="demoPick"
+                  onChange={e => {
+                    handleCSVUpdate(e.target.files?.item(0));
+                  }}
+                />
+                Upload File
+              </label>
+
+              {selectedFileName && (
+                <span>
+                  {selectedFileName} - {csvData?.length} Records Detected
+                </span>
+              )}
+            </div>
 
             <table
               id="demoTable"
