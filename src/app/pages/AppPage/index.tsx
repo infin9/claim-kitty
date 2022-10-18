@@ -1,5 +1,5 @@
 import { Header } from 'app/components/Header';
-import { BigNumber, ethers, FixedNumber } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import * as React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useAccount, useContract, useSigner } from 'wagmi';
@@ -93,30 +93,20 @@ export function AppPage() {
 
     const ipfsUrl = 'ipfs://' + cid;
 
-    const _startTime = new Date(
-      startDate.getFullYear(),
-      startDate.getMonth(),
-      startDate.getDate(),
-      0,
-      0,
-      0,
-    );
-    const _endTime = new Date(
-      endDate.getFullYear(),
-      endDate.getMonth(),
-      endDate.getDate(),
-      23,
-      59,
-      59,
-    );
+    const startDateUnix = Math.floor(startDate.getTime() / 1000);
+    const endDateUnix = Math.floor(endDate.getTime() / 1000);
 
-    const startDateUnix = Math.floor(_startTime.getTime() / 1000);
-    const endDateUnix = Math.floor(_endTime.getTime() / 1000);
+    const differance = endDateUnix - startDateUnix;
 
-    const diffDays = Math.ceil((endDateUnix - startDateUnix) / (60 * 60 * 24));
-    console.log(diffDays);
-    if (diffDays < 14 || diffDays > 90) {
-      alert('Time range should be atleast 14 days and atmost 90 days');
+    const minClaimPeriod = (await contract.minClaimPeriod()).toNumber();
+    const maxClaimPeriod = (await contract.maxClaimPeriod()).toNumber();
+
+    if (differance < minClaimPeriod || differance > maxClaimPeriod) {
+      alert(
+        `Claim period should be atleast ${formatDuration(
+          minClaimPeriod,
+        )} and atmost ${formatDuration(maxClaimPeriod)}`,
+      );
       setLoadingMessage(undefined);
       setIsLoading(false);
       return;
@@ -331,23 +321,14 @@ export function AppPage() {
               returned every three months to avoid dumps or liquidity
               mainpulation.
             </p>
-            <label htmlFor="start">Start Date</label>
-            <input
-              type="date"
-              name="startDate"
-              value={startDate.toISOString().split('T')[0]}
-              onChange={e => setStartDate(new Date(e.target.value))}
-            />{' '}
-            <br />
-            <label htmlFor="end" style={{ paddingTop: 20 }}>
-              End Date
-            </label>
-            <input
-              type="date"
-              name="endDate"
-              value={endDate.toISOString().split('T')[0]}
-              onChange={e => setEndDate(new Date(e.target.value))}
-            />
+            <div>
+              <label htmlFor="start">Start Date</label>{' '}
+              <DateField value={startDate} setValue={setStartDate} />
+            </div>
+            <div style={{ marginTop: 10 }}>
+              <label htmlFor="end">End Date</label>{' '}
+              <DateField value={endDate} setValue={setEndDate} />
+            </div>
           </div>
           Fees in Native Token
           <label className="switch">
@@ -375,3 +356,61 @@ export function AppPage() {
     </>
   );
 }
+
+const DateField = ({
+  value,
+  setValue,
+}: {
+  value: Date;
+  setValue: (date: Date) => void;
+}) => {
+  const str = new Date(value.getTime() - value.getTimezoneOffset() * 60000)
+    .toISOString()
+    .slice(0, -1)
+    .split('T');
+  const date = str[0];
+  const time = str[1].split('.')[0];
+
+  const setDate = ({
+    date: newDate,
+    time: newTime,
+  }: {
+    date?: string;
+    time?: string;
+  }) => {
+    try {
+      const newValue = new Date((newDate ?? date) + 'T' + (newTime ?? time));
+      newValue.toISOString();
+      setValue(newValue);
+    } catch (e) {}
+  };
+  return (
+    <>
+      <input
+        type="date"
+        value={date}
+        onChange={e => setDate({ date: e.target.value })}
+      />{' '}
+      <input
+        type="time"
+        value={time}
+        onChange={e => setDate({ time: e.target.value })}
+      />
+    </>
+  );
+};
+
+const formatDuration = (s: number) => {
+  if (s == 0) return '0 seconds';
+  const ms = Math.abs(s) * 1000;
+  const time = {
+    day: Math.floor(ms / 86400000),
+    hour: Math.floor(ms / 3600000) % 24,
+    minute: Math.floor(ms / 60000) % 60,
+    second: Math.floor(ms / 1000) % 60,
+  };
+  return Object.entries(time)
+    .filter(val => val[1] !== 0)
+    .map(([key, val]) => `${val} ${key}${val !== 1 ? 's' : ''}`)
+    .join(', ');
+};
