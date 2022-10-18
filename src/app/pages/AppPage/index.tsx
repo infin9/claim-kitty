@@ -84,14 +84,8 @@ export function AppPage() {
     if (!csvData) return alert('Upload a valid csv file');
 
     setIsLoading(true);
-    setLoadingMessage('Uploading File');
 
-    const isPayingToken = isFeesInWETH === true;
-
-    const jsonData = { data: csvData };
-    const cid = await PinataService.pinToIPFS(jsonData);
-
-    const ipfsUrl = 'ipfs://' + cid;
+    setLoadingMessage('Validating...');
 
     const startDateUnix = Math.floor(startDate.getTime() / 1000);
     const endDateUnix = Math.floor(endDate.getTime() / 1000);
@@ -111,6 +105,15 @@ export function AppPage() {
       setIsLoading(false);
       return;
     }
+
+    setLoadingMessage('Uploading CSV...');
+
+    const isPayingToken = isFeesInWETH === true;
+
+    const jsonData = { data: csvData };
+    const cid = await PinataService.pinToIPFS(jsonData);
+
+    const ipfsUrl = 'ipfs://' + cid;
     // Approve Token
 
     const tokenContract = new ethers.Contract(tokenAddress, erc20ABI, signer!);
@@ -124,7 +127,12 @@ export function AppPage() {
       BigNumber.from(0),
     );
 
-    // const allo
+    if ((await tokenContract.balanceOf(address)).lt(totalAmount)) {
+      alert("This wallet doesn't have enough balance");
+      setLoadingMessage(undefined);
+      setIsLoading(false);
+      return;
+    }
 
     if (
       totalAmount.gt(await tokenContract.allowance(address, CONTRACT_ADDRESS))
@@ -159,7 +167,7 @@ export function AppPage() {
             .parseEther('100')
             .gt(await wethContract.allowance(address, CONTRACT_ADDRESS))
         ) {
-          setLoadingMessage('Waiting for WETH Approval...');
+          setLoadingMessage('Waiting for WETH allowance Approval...');
           const wethApprovalTransaction = await wethContract.approve(
             CONTRACT_ADDRESS,
             MAX_APPROVE_AMOUNT,
