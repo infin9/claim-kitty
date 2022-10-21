@@ -6,7 +6,6 @@ import { useAccount, useContract, useSigner } from 'wagmi';
 
 import contractABI from 'app/contract/contractABI.json';
 import erc20ABI from 'app/contract/erc20ABI.json';
-import { PinataService } from 'app/services/PinataService';
 
 import { LoaderContext } from 'app';
 import {
@@ -15,6 +14,10 @@ import {
   WETH_TOKEN_ADDRESS,
 } from 'app/globals';
 import { createLeaf, createMerkleTree } from 'app/merkleTree';
+import { ref, set, update } from 'firebase/database';
+import { database } from 'app/firebase';
+
+import { v4 as uuidv4 } from 'uuid';
 
 type CSVItem = {
   address: string;
@@ -110,11 +113,9 @@ export function AppPage() {
 
     const isPayingToken = isFeesInWETH === true;
 
-    const jsonData = { data: csvData };
-    const cid = await PinataService.pinToIPFS(jsonData);
-
-    const ipfsUrl = 'ipfs://' + cid;
-    // Approve Token
+    const jsonData = csvData;
+    const airdropUuid = uuidv4();
+    set(ref(database, 'airdrops/' + airdropUuid), jsonData);
 
     const tokenContract = new ethers.Contract(tokenAddress, erc20ABI, signer!);
     const decimals = await tokenContract.decimals();
@@ -186,7 +187,7 @@ export function AppPage() {
           totalAmount,
           startDateUnix,
           endDateUnix,
-          ipfsUrl,
+          airdropUuid,
           root,
           {
             gasLimit: 2000000,
@@ -195,7 +196,7 @@ export function AppPage() {
         setLoadingMessage('Creating Airdrop...');
         await transaction.wait();
       } else {
-        const feeValue = await contract.feeValue();
+        const feeValue = await contract.creatorFee();
         setLoadingMessage('Confirm Transaction');
         const transaction = await contract.createNewAirdrop(
           isPayingToken,
@@ -203,7 +204,7 @@ export function AppPage() {
           totalAmount,
           startDateUnix,
           endDateUnix,
-          ipfsUrl,
+          airdropUuid,
           root,
           {
             value: feeValue,

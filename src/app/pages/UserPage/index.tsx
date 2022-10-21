@@ -8,6 +8,8 @@ import erc20ABI from 'app/contract/erc20ABI.json';
 import { parseUnits } from 'ethers/lib/utils';
 import { createLeaf, createMerkleTree } from 'app/merkleTree';
 import { BigNumber, ethers } from 'ethers';
+import { child, get, ref } from 'firebase/database';
+import { database } from 'app/firebase';
 
 class SimpleError extends Error {
   message: string;
@@ -146,10 +148,11 @@ export function UserPage() {
     tokenAddress: string,
     callback: VoidFunction,
   ) {
-    const ipfsUrl = await contract.airdropUserList(airdropId);
-    const cid = ipfsUrl.slice(7, ipfsUrl.length);
-    const response = await fetch('https://cloudflare-ipfs.com/ipfs/' + cid);
-    const usersList = (await response.json()).data;
+    const airdropUuid = await contract.airdropUserList(airdropId);
+    const dbRef = ref(database);
+    const usersList = (
+      await get(child(dbRef, `airdrops/${airdropUuid}`))
+    ).val();
 
     const airdropContract = new ethers.Contract(
       airdropId,
