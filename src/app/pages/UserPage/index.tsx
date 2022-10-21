@@ -76,7 +76,7 @@ export function UserPage() {
         signer!,
       );
       const transaction = await airdropContract.creatorClaim(airdrop.roundId, {
-        gasLimit: 2000000,
+        gasLimit: 200000,
       });
       const response = await transaction.wait();
       setClaimableAidrops(airdrops => {
@@ -125,7 +125,7 @@ export function UserPage() {
         proof,
         {
           value: claimFee,
-          gasLimit: 2000000,
+          gasLimit: 200000,
         },
       );
       const response = await transaction.wait();
