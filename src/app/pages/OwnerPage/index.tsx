@@ -7,6 +7,7 @@ import merkleChildABI from 'app/contract/merkleChildABI.json';
 import erc20ABI from 'app/contract/erc20ABI.json';
 import { BigNumber, ethers } from 'ethers';
 import { LoaderContext } from 'app';
+import { ErrorCode } from '@ethersproject/logger';
 
 class SimpleError extends Error {
   message: string;
@@ -134,13 +135,14 @@ export function OwnerPage() {
       aidropIds.forEach(airdrop =>
         fetchAirdropData(airdrop, () => airdropFetchComplete(airdrop)),
       );
-    } catch (e) {
-      console.error(e);
-      setIsLoading(false);
-      if (e instanceof SimpleError) {
-        return alert(e.message);
+    } catch (e: any) {
+      const code = e.code;
+      if (code !== undefined && Object.keys(ErrorCode).includes(code)) {
+        alert(e.reason ?? e.message);
+      } else {
+        alert('Some error occured! Check console for mor details.');
       }
-      return alert('Some error occured.');
+      console.error(e);
     }
   };
 

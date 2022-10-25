@@ -14,11 +14,11 @@ import {
   WETH_TOKEN_ADDRESS,
 } from 'app/globals';
 import { createLeaf, createMerkleTree } from 'app/merkleTree';
-import { ref, set, update } from 'firebase/database';
+import { ref, set } from 'firebase/database';
 import { database } from 'app/firebase';
 
 import { v4 as uuidv4 } from 'uuid';
-import { SimpleError } from 'utils/errors/errors';
+import { ErrorCode } from '@ethersproject/logger';
 
 type CSVItem = {
   address: string;
@@ -207,16 +207,16 @@ export function AppPage() {
       }
       alert('Success');
       setIsLoading(false);
-    } catch (e) {
+    } catch (e: any) {
       setLoadingMessage(undefined);
       setIsLoading(false);
-      if (e instanceof SimpleError) {
-        alert(e.message);
-        console.log(e.error);
+      const code = e.code;
+      if (code !== undefined && Object.keys(ErrorCode).includes(code)) {
+        alert(e.reason ?? e.message);
       } else {
-        alert('Some error occured');
-        console.error(e);
+        alert('Some error occured! Check console for mor details.');
       }
+      console.error(e);
     }
   }
 

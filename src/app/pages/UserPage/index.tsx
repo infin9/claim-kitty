@@ -10,6 +10,7 @@ import { createLeaf, createMerkleTree } from 'app/merkleTree';
 import { BigNumber, ethers } from 'ethers';
 import { child, get, ref } from 'firebase/database';
 import { database } from 'app/firebase';
+import { ErrorCode } from '@ethersproject/logger';
 
 class SimpleError extends Error {
   message: string;
@@ -81,13 +82,19 @@ export function UserPage() {
         airdrops[index].status = 'CLAIMED';
         return [...airdrops];
       });
-    } catch (e) {
-      alert('Some error occured');
-      console.error(e);
+    } catch (e: any) {
       setClaimableAidrops(airdrops => {
         airdrops[index].status = 'UNCLAIMED';
         return [...airdrops];
       });
+
+      const code = e.code;
+      if (code !== undefined && Object.keys(ErrorCode).includes(code)) {
+        alert(e.reason ?? e.message);
+      } else {
+        alert('Some error occured! Check console for mor details.');
+      }
+      console.error(e);
     }
   }
 
@@ -130,13 +137,19 @@ export function UserPage() {
         airdrops[index].status = 'CLAIMED';
         return [...airdrops];
       });
-    } catch (e) {
-      alert('Some error occured');
-      console.error(e);
+    } catch (e: any) {
       setClaimableAidrops(airdrops => {
         airdrops[index].status = 'UNCLAIMED';
         return [...airdrops];
       });
+
+      const code = e.code;
+      if (code !== undefined && Object.keys(ErrorCode).includes(code)) {
+        alert(e.reason ?? e.message);
+      } else {
+        alert('Some error occured! Check console for mor details.');
+      }
+      console.error(e);
     }
   }
 
