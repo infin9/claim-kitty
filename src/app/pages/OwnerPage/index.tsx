@@ -47,9 +47,7 @@ export function OwnerPage() {
         merkleChildABI,
         signer!,
       );
-      const transaction = await airdropContract.ownerClaim(airdrop.roundId, {
-        gasLimit: 2000000,
-      });
+      const transaction = await airdropContract.ownerClaim(airdrop.roundId);
       const response = await transaction.wait();
       setOwnerClaimableAidrops(airdrops => {
         airdrops[index].status = 'CLAIMED';

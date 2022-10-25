@@ -75,9 +75,7 @@ export function UserPage() {
         merkleChildABI,
         signer!,
       );
-      const transaction = await airdropContract.creatorClaim(airdrop.roundId, {
-        gasLimit: 200000,
-      });
+      const transaction = await airdropContract.creatorClaim(airdrop.roundId);
       const response = await transaction.wait();
       setClaimableAidrops(airdrops => {
         airdrops[index].status = 'CLAIMED';
@@ -125,7 +123,6 @@ export function UserPage() {
         proof,
         {
           value: claimFee,
-          gasLimit: 200000,
         },
       );
       const response = await transaction.wait();

@@ -142,9 +142,6 @@ export function AppPage() {
       const tokenApprovalTransaction = await tokenContract.approve(
         CONTRACT_ADDRESS,
         MAX_APPROVE_AMOUNT,
-        {
-          gasLimit: 2000000,
-        },
       );
       setLoadingMessage('Processing...');
       await tokenApprovalTransaction.wait();
@@ -172,9 +169,6 @@ export function AppPage() {
           const wethApprovalTransaction = await wethContract.approve(
             CONTRACT_ADDRESS,
             MAX_APPROVE_AMOUNT,
-            {
-              gasLimit: 2000000,
-            },
           );
           setLoadingMessage('Processing...');
           await wethApprovalTransaction.wait();
@@ -189,9 +183,6 @@ export function AppPage() {
           endDateUnix,
           airdropUuid,
           root,
-          {
-            gasLimit: 2000000,
-          },
         );
         setLoadingMessage('Creating Airdrop...');
         await transaction.wait();
@@ -206,10 +197,6 @@ export function AppPage() {
           endDateUnix,
           airdropUuid,
           root,
-          {
-            value: feeValue,
-            gasLimit: 2000000,
-          },
         );
         setLoadingMessage('Creating Airdrop...');
         await transaction.wait();
