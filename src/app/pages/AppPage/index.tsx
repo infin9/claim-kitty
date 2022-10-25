@@ -198,6 +198,9 @@ export function AppPage() {
           endDateUnix,
           airdropUuid,
           root,
+          {
+            value: feeValue,
+          },
         );
         setLoadingMessage('Creating Airdrop...');
         await transaction.wait();
