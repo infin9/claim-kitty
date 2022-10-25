@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { useAccount, useConnect, useDisconnect } from 'wagmi';
+import { useAccount, useConnect, useDisconnect, useNetwork } from 'wagmi';
 import { InjectedConnector } from 'wagmi/connectors/injected';
 
 export function Header() {
@@ -8,6 +8,7 @@ export function Header() {
   const { connect } = useConnect({
     connector: new InjectedConnector(),
   });
+  const { chain, chains } = useNetwork();
   const { disconnect } = useDisconnect();
 
   return (

@@ -18,6 +18,7 @@ import { ref, set, update } from 'firebase/database';
 import { database } from 'app/firebase';
 
 import { v4 as uuidv4 } from 'uuid';
+import { SimpleError } from 'utils/errors/errors';
 
 type CSVItem = {
   address: string;
@@ -204,10 +205,15 @@ export function AppPage() {
       alert('Success');
       setIsLoading(false);
     } catch (e) {
-      alert('Some error occured');
-      console.error(e);
       setLoadingMessage(undefined);
       setIsLoading(false);
+      if (e instanceof SimpleError) {
+        alert(e.message);
+        console.log(e.error);
+      } else {
+        alert('Some error occured');
+        console.error(e);
+      }
     }
   }
 
