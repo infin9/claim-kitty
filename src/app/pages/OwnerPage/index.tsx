@@ -120,9 +120,7 @@ export function OwnerPage() {
         contractABI,
         signer!,
       );
-      const aidropIds: string[] = await contract.getAllTokenAirdrops(
-        '0x19e5cf711f1dc274a1535c537b6273e6f03a28b8',
-      );
+      const aidropIds: string[] = await contract.getAllAirdrops();
 
       if (aidropIds.length === 0) {
         throw new SimpleError('No airdrops found');
