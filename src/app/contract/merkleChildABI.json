@@ -224,13 +224,7 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "uint8",
-        "name": "roundId",
-        "type": "uint8"
-      }
-    ],
+    "inputs": [],
     "name": "ownerClaim",
     "outputs": [],
     "stateMutability": "nonpayable",
@@ -241,22 +235,16 @@
     "name": "ownerClaimStatus",
     "outputs": [
       {
-        "internalType": "bool[]",
+        "internalType": "bool",
         "name": "status",
-        "type": "bool[]"
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "uint8",
-        "name": "",
-        "type": "uint8"
-      }
-    ],
+    "inputs": [],
     "name": "ownerClaimed",
     "outputs": [
       {

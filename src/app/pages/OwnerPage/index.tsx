@@ -21,7 +21,6 @@ interface OwnerClaimableAidrop {
   airdrop: string;
   amount: string;
   status: 'UNCLAIMED' | 'CLAIMING' | 'CLAIMED';
-  roundId: number;
 }
 export function OwnerPage() {
   const { setIsLoading } = React.useContext(LoaderContext);
@@ -48,7 +47,7 @@ export function OwnerPage() {
         merkleChildABI,
         signer!,
       );
-      const transaction = await airdropContract.ownerClaim(airdrop.roundId);
+      const transaction = await airdropContract.ownerClaim();
       const response = await transaction.wait();
       setOwnerClaimableAidrops(airdrops => {
         airdrops[index].status = 'CLAIMED';
@@ -83,25 +82,18 @@ export function OwnerPage() {
 
     const _ownerClaimableDrops: OwnerClaimableAidrop[] = [];
 
-    const ownerClaimStatus: boolean[] =
-      await airdropContract.ownerClaimStatus();
+    const ownerClaimStatus: boolean = await airdropContract.ownerClaimStatus();
 
-    let totalAmount: BigNumber = await airdropContract.nonClaimedFunds();
-    if (totalAmount.isZero()) {
-      totalAmount = await tokenContract.balanceOf(airdropId);
-    }
-    const amount = totalAmount.div(4);
+    const totalAmount = await tokenContract.balanceOf(airdropId);
 
-    ownerClaimStatus.forEach(async (status, roundId) => {
-      if (status === false) return;
+    if (ownerClaimStatus === true) {
       _ownerClaimableDrops.push({
         tokenAddress: tokenAddress,
         airdrop: airdropId,
-        amount: ethers.utils.formatUnits(amount, decimals),
+        amount: ethers.utils.formatUnits(totalAmount, decimals),
         status: 'UNCLAIMED',
-        roundId: roundId,
       });
-    });
+    }
     setOwnerClaimableAidrops(drops => [...drops, ..._ownerClaimableDrops]);
 
     callback();
