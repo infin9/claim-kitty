@@ -94,6 +94,13 @@ export function AppPage() {
     const startDateUnix = Math.floor(startDate.getTime() / 1000);
     const endDateUnix = Math.floor(endDate.getTime() / 1000);
 
+    if (startDateUnix <= new Date().getTime() / 1000) {
+      alert(`Start time is already expired`);
+      setLoadingMessage(undefined);
+      setIsLoading(false);
+      return;
+    }
+
     const differance = endDateUnix - startDateUnix;
 
     const minClaimPeriod = (await contract.minClaimPeriod()).toNumber();
