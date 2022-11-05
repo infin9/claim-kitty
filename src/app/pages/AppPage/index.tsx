@@ -11,7 +11,7 @@ import { LoaderContext } from 'app';
 import {
   CONTRACT_ADDRESS,
   MAX_APPROVE_AMOUNT,
-  WETH_TOKEN_ADDRESS,
+  NULL_ADDRESS,
 } from 'app/globals';
 import { createLeaf, createMerkleTree } from 'app/merkleTree';
 import { ref, set } from 'firebase/database';
@@ -37,7 +37,8 @@ export function AppPage() {
 
   const { setIsLoading, setLoadingMessage } = React.useContext(LoaderContext);
 
-  const [tokenAddress, setTokenAddress] = React.useState<string>('');
+  const [tokenAddressInputValue, setTokenAddressInputValue] =
+    React.useState<string>('');
   const [csvData, setCsvData] = React.useState<CSVItem[] | undefined>(
     undefined,
   );
@@ -47,6 +48,8 @@ export function AppPage() {
   const [startDate, setStartDate] = React.useState<Date>(new Date());
   const [endDate, setEndDate] = React.useState<Date>(new Date());
 
+  const [isUsingNativeToken, setIsUsingNativeToken] =
+    React.useState<boolean>(false);
   const [isFeesInWETH, setIsFeesInWETH] = React.useState<boolean>(false);
 
   function handleCSVUpdate(file?: File | null) {
@@ -83,8 +86,12 @@ export function AppPage() {
   async function handleSubmit() {
     setLoadingMessage(undefined);
     if (!address) return alert('No wallet connected');
+    if (isUsingNativeToken === false && !tokenAddressInputValue)
+      return alert('Enter token address');
 
-    if (!tokenAddress) return alert('Enter token address');
+    const tokenAddress =
+      isUsingNativeToken === false ? tokenAddressInputValue : NULL_ADDRESS;
+
     if (!csvData) return alert('Upload a valid csv file');
 
     setIsLoading(true);
@@ -125,7 +132,11 @@ export function AppPage() {
     const airdropUuid = uuidv4();
     set(ref(database, 'airdrops/' + airdropUuid), jsonData);
 
-    const tokenContract = new ethers.Contract(tokenAddress, erc20ABI, signer!);
+    const tokenContract = new ethers.Contract(
+      tokenAddressInputValue,
+      erc20ABI,
+      signer!,
+    );
     const decimals = await tokenContract.decimals();
 
     const totalAmount = Object.values(csvData).reduce(
@@ -161,13 +172,13 @@ export function AppPage() {
     const root = tree.getHexRoot();
 
     try {
-      if (isPayingToken) {
+      if (isPayingToken === true) {
+        const wethAddress = await contract.weth();
         const wethContract = new ethers.Contract(
-          WETH_TOKEN_ADDRESS,
+          wethAddress,
           erc20ABI,
           signer!,
         );
-
         if (
           ethers.utils
             .parseEther('100')
@@ -183,31 +194,36 @@ export function AppPage() {
         }
 
         setLoadingMessage('Confirm Transaction');
+        const options =
+          isUsingNativeToken === true ? { value: totalAmount } : {};
         const transaction = await contract.createNewAirdrop(
           isPayingToken,
-          tokenAddress,
+          tokenAddressInputValue,
           totalAmount,
           startDateUnix,
           endDateUnix,
           airdropUuid,
           root,
+          options,
         );
         setLoadingMessage('Creating Airdrop...');
         await transaction.wait();
       } else {
         const feeValue = await contract.creatorFee();
         setLoadingMessage('Confirm Transaction');
+        const options = {
+          value:
+            isUsingNativeToken === true ? totalAmount.add(feeValue) : feeValue,
+        };
         const transaction = await contract.createNewAirdrop(
           isPayingToken,
-          tokenAddress,
+          tokenAddressInputValue,
           totalAmount,
           startDateUnix,
           endDateUnix,
           airdropUuid,
           root,
-          {
-            value: feeValue,
-          },
+          options,
         );
         setLoadingMessage('Creating Airdrop...');
         await transaction.wait();
@@ -268,15 +284,33 @@ export function AppPage() {
               Your tokens will be safely deposited into a Smart Contract and
               will be available to be claimed to your users immediately.
             </p>
-            <input
-              className="form"
-              type="text"
-              name="token-address"
-              placeholder="Insert Here Token Address"
-              value={tokenAddress}
-              onChange={e => setTokenAddress(e.target.value)}
-              accept=".csv"
-            />
+            <div>
+              <span>Use native token</span>{' '}
+              <label
+                className="switch"
+                style={{ transform: 'translateY(-5px)' }}
+              >
+                <input
+                  type="checkbox"
+                  checked={isUsingNativeToken}
+                  onChange={() => setIsUsingNativeToken(v => !v)}
+                />
+                <span className="slider round"></span>
+              </label>{' '}
+              <span>Use native token</span>
+            </div>
+            <br />
+            {isUsingNativeToken === false && (
+              <input
+                className="form"
+                type="text"
+                name="token-address"
+                placeholder="Insert Here Token Address"
+                value={tokenAddressInputValue}
+                onChange={e => setTokenAddressInputValue(e.target.value)}
+                accept=".csv"
+              />
+            )}
           </div>
           <div className="panel" style={{ paddingBottom: 60 }}>
             <h1>3. Drop the CSV File.</h1>
