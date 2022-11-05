@@ -8,17 +8,16 @@ import contractABI from 'app/contract/contractABI.json';
 import erc20ABI from 'app/contract/erc20ABI.json';
 
 import { LoaderContext } from 'app';
-import {
-  CONTRACT_ADDRESS,
-  MAX_APPROVE_AMOUNT,
-  NULL_ADDRESS,
-} from 'app/globals';
+import { MAX_APPROVE_AMOUNT, NULL_ADDRESS } from 'app/globals';
 import { createLeaf, createMerkleTree } from 'app/merkleTree';
 import { ref, set } from 'firebase/database';
 import { database } from 'app/firebase';
 
 import { v4 as uuidv4 } from 'uuid';
 import { ErrorCode } from '@ethersproject/logger';
+import { useContractAddress } from 'app/hooks/useContractAddress';
+import { ErrorComponent } from 'app/components/ErrorComponent/ErrorComponent';
+import { AppWrapper } from 'app/components/AppWrapper/AppWrapper';
 
 type CSVItem = {
   address: string;
@@ -29,8 +28,10 @@ export function AppPage() {
   const { address } = useAccount();
   const { data: signer } = useSigner();
 
+  const [contractAddress, isSupportedNetwork] = useContractAddress();
+
   const contract = useContract({
-    addressOrName: CONTRACT_ADDRESS,
+    addressOrName: contractAddress ?? NULL_ADDRESS,
     contractInterface: contractABI,
     signerOrProvider: signer,
   });
@@ -155,11 +156,11 @@ export function AppPage() {
     }
 
     if (
-      totalAmount.gt(await tokenContract.allowance(address, CONTRACT_ADDRESS))
+      totalAmount.gt(await tokenContract.allowance(address, contractAddress))
     ) {
       setLoadingMessage('Waiting for token allowance approval');
       const tokenApprovalTransaction = await tokenContract.approve(
-        CONTRACT_ADDRESS,
+        contractAddress,
         MAX_APPROVE_AMOUNT,
       );
       setLoadingMessage('Processing...');
@@ -182,11 +183,11 @@ export function AppPage() {
         if (
           ethers.utils
             .parseEther('100')
-            .gt(await wethContract.allowance(address, CONTRACT_ADDRESS))
+            .gt(await wethContract.allowance(address, contractAddress))
         ) {
           setLoadingMessage('Waiting for WETH allowance Approval...');
           const wethApprovalTransaction = await wethContract.approve(
-            CONTRACT_ADDRESS,
+            contractAddress,
             MAX_APPROVE_AMOUNT,
           );
           setLoadingMessage('Processing...');
@@ -250,155 +251,159 @@ export function AppPage() {
         <meta name="description" content="A Boilerplate application AppPage" />
       </Helmet>
       <Header />
-      <div className="container">
-        <form
-          onSubmit={e => {
-            e.preventDefault();
-            handleSubmit();
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 20 }}>
-            <a href="/app">[Create Airdrop]</a>
-            <a href="/user">Collect Airdrop</a>
-          </div>
-          <br />
-          <div className="panel">
-            <h1>1. Insert your Wallet.</h1>
-            <p>
-              Welcome to ClaimKitty! This is a place where you can build and
-              customize your airdrop in the easiest and safest way possible.{' '}
-              <br />
-              We are focused in building a strong and large community and
-              promote our service towards blockchain developers. Read more about
-              Us on our communities or Socials. <br />{' '}
-              <strong>
-                Start now to promote your project authenticating yourself
-                throught Metamask!
-              </strong>
-            </p>
-          </div>
-          <div className="panel">
-            <h1>2. Select the Token to AirDrop.</h1>
-            <p>
-              Select the Token to airdrop to all users throught the form below.
-              Your tokens will be safely deposited into a Smart Contract and
-              will be available to be claimed to your users immediately.
-            </p>
-            <div>
-              <span>Use native token</span>{' '}
-              <label
-                className="switch"
-                style={{ transform: 'translateY(-5px)' }}
-              >
-                <input
-                  type="checkbox"
-                  checked={isUsingNativeToken}
-                  onChange={() => setIsUsingNativeToken(v => !v)}
-                />
-                <span className="slider round"></span>
-              </label>{' '}
-              <span>Use native token</span>
+      <AppWrapper address={address} isSupportedNetwork={isSupportedNetwork}>
+        <div className="container">
+          <form
+            onSubmit={e => {
+              e.preventDefault();
+              handleSubmit();
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 20 }}>
+              <a href="/app">[Create Airdrop]</a>
+              <a href="/user">Collect Airdrop</a>
             </div>
             <br />
-            {isUsingNativeToken === false && (
-              <input
-                className="form"
-                type="text"
-                name="token-address"
-                placeholder="Insert Here Token Address"
-                value={tokenAddressInputValue}
-                onChange={e => setTokenAddressInputValue(e.target.value)}
-                accept=".csv"
-              />
-            )}
-          </div>
-          <div className="panel" style={{ paddingBottom: 60 }}>
-            <h1>3. Drop the CSV File.</h1>
-            <p>
-              Drop your CSV file or select it via the button below. Through this
-              CSV we will know the wallets eligible for airdrop and their
-              respective token amounts. <br />
-              <strong>Please Note:</strong> The CSV must consist of two columns.
-              On the first column enter the wallet address, on the second column
-              enter the amount of tokens to be received. Indicate the decimal
-              place with a dot. We won't store any of your CSV Data.
-            </p>
-
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                position: 'relative',
-                top: 20,
-              }}
-            >
-              <label className="fileUploader">
+            <div className="panel">
+              <h1>1. Insert your Wallet.</h1>
+              <p>
+                Welcome to ClaimKitty! This is a place where you can build and
+                customize your airdrop in the easiest and safest way possible.{' '}
+                <br />
+                We are focused in building a strong and large community and
+                promote our service towards blockchain developers. Read more
+                about Us on our communities or Socials. <br />{' '}
+                <strong>
+                  Start now to promote your project authenticating yourself
+                  throught Metamask!
+                </strong>
+              </p>
+            </div>
+            <div className="panel">
+              <h1>2. Select the Token to AirDrop.</h1>
+              <p>
+                Select the Token to airdrop to all users throught the form
+                below. Your tokens will be safely deposited into a Smart
+                Contract and will be available to be claimed to your users
+                immediately.
+              </p>
+              <div>
+                <span>Use native token</span>{' '}
+                <label
+                  className="switch"
+                  style={{ transform: 'translateY(-5px)' }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isUsingNativeToken}
+                    onChange={() => setIsUsingNativeToken(v => !v)}
+                  />
+                  <span className="slider round"></span>
+                </label>{' '}
+                <span>Use native token</span>
+              </div>
+              <br />
+              {isUsingNativeToken === false && (
                 <input
-                  type="file"
+                  className="form"
+                  type="text"
+                  name="token-address"
+                  placeholder="Insert Here Token Address"
+                  value={tokenAddressInputValue}
+                  onChange={e => setTokenAddressInputValue(e.target.value)}
                   accept=".csv"
-                  id="demoPick"
-                  onChange={e => {
-                    handleCSVUpdate(e.target.files?.item(0));
-                  }}
                 />
-                Upload File
-              </label>
-
-              {selectedFileName && (
-                <span>
-                  {selectedFileName} - {csvData?.length} Records Detected
-                </span>
               )}
             </div>
+            <div className="panel" style={{ paddingBottom: 60 }}>
+              <h1>3. Drop the CSV File.</h1>
+              <p>
+                Drop your CSV file or select it via the button below. Through
+                this CSV we will know the wallets eligible for airdrop and their
+                respective token amounts. <br />
+                <strong>Please Note:</strong> The CSV must consist of two
+                columns. On the first column enter the wallet address, on the
+                second column enter the amount of tokens to be received.
+                Indicate the decimal place with a dot. We won't store any of
+                your CSV Data.
+              </p>
 
-            <table
-              id="demoTable"
-              style={{ display: 'none', height: 250, overflow: 'auto' }}
-            ></table>
-          </div>
-          <div className="panel">
-            <h1>4. Select the Time Range.</h1>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  position: 'relative',
+                  top: 20,
+                }}
+              >
+                <label className="fileUploader">
+                  <input
+                    type="file"
+                    accept=".csv"
+                    id="demoPick"
+                    onChange={e => {
+                      handleCSVUpdate(e.target.files?.item(0));
+                    }}
+                  />
+                  Upload File
+                </label>
+
+                {selectedFileName && (
+                  <span>
+                    {selectedFileName} - {csvData?.length} Records Detected
+                  </span>
+                )}
+              </div>
+
+              <table
+                id="demoTable"
+                style={{ display: 'none', height: 250, overflow: 'auto' }}
+              ></table>
+            </div>
+            <div className="panel">
+              <h1>4. Select the Time Range.</h1>
+              <p>
+                Select through our Date Pickers the time range in which users
+                can claim tokens. If not all tokens will be distributed, our
+                Smart Contract is scheduled to return them to you gradually. The
+                total amount of Tokens will be divided by three and each tranche
+                will be returned every three months to avoid dumps or liquidity
+                mainpulation.
+              </p>
+              <div>
+                <label htmlFor="start">Start Date</label>{' '}
+                <DateField value={startDate} setValue={setStartDate} />
+              </div>
+              <div style={{ marginTop: 10 }}>
+                <label htmlFor="end">End Date</label>{' '}
+                <DateField value={endDate} setValue={setEndDate} />
+              </div>
+            </div>
+            Fees in Native Token
+            <label className="switch">
+              <input
+                type="checkbox"
+                checked={isFeesInWETH}
+                onChange={() => setIsFeesInWETH(v => !v)}
+              />
+              <span className="slider round"></span>
+            </label>
+            Fees in WETH
+            <div className="button" id="confirmAirdrop" onClick={handleSubmit}>
+              Confirm AirDrop
+            </div>
             <p>
-              Select through our Date Pickers the time range in which users can
-              claim tokens. If not all tokens will be distributed, our Smart
-              Contract is scheduled to return them to you gradually. The total
-              amount of Tokens will be divided by three and each tranche will be
-              returned every three months to avoid dumps or liquidity
-              mainpulation.
+              By pressing the 'Confirm AirDrop' button, the Metamask wallet will
+              ask you to confirm the transaction. As soon as the transaction is
+              confirmed by the network you selected, your users will be able to
+              claim tokens. The service will charge a fee of $5 in ETH or WETH
+              on the mainnet, of the Native Token or WETH on the other chains.
+              Select which you prefer in the above checkbox. <br /> <br />{' '}
             </p>
-            <div>
-              <label htmlFor="start">Start Date</label>{' '}
-              <DateField value={startDate} setValue={setStartDate} />
-            </div>
-            <div style={{ marginTop: 10 }}>
-              <label htmlFor="end">End Date</label>{' '}
-              <DateField value={endDate} setValue={setEndDate} />
-            </div>
-          </div>
-          Fees in Native Token
-          <label className="switch">
-            <input
-              type="checkbox"
-              checked={isFeesInWETH}
-              onChange={() => setIsFeesInWETH(v => !v)}
-            />
-            <span className="slider round"></span>
-          </label>
-          Fees in WETH
-          <div className="button" id="confirmAirdrop" onClick={handleSubmit}>
-            Confirm AirDrop
-          </div>
-          <p>
-            By pressing the 'Confirm AirDrop' button, the Metamask wallet will
-            ask you to confirm the transaction. As soon as the transaction is
-            confirmed by the network you selected, your users will be able to
-            claim tokens. The service will charge a fee of $5 in ETH or WETH on
-            the mainnet, of the Native Token or WETH on the other chains. Select
-            which you prefer in the above checkbox. <br /> <br />{' '}
-          </p>
-        </form>
-      </div>
+          </form>
+        </div>
+      </AppWrapper>
     </>
   );
 }

@@ -1,5 +1,4 @@
 import { Header } from 'app/components/Header';
-import { CONTRACT_ADDRESS } from 'app/globals';
 import * as React from 'react';
 import { useAccount, useContract, useSigner } from 'wagmi';
 import contractABI from 'app/contract/contractABI.json';
@@ -8,6 +7,8 @@ import erc20ABI from 'app/contract/erc20ABI.json';
 import { BigNumber, ethers } from 'ethers';
 import { LoaderContext } from 'app';
 import { ErrorCode } from '@ethersproject/logger';
+import { useContractAddress } from 'app/hooks/useContractAddress';
+import { AppWrapper } from 'app/components/AppWrapper/AppWrapper';
 
 class SimpleError extends Error {
   message: string;
@@ -34,6 +35,8 @@ export function OwnerPage() {
 
   const { address } = useAccount();
   const { data: signer } = useSigner();
+
+  const [contractAddress, isSupportedNetwork] = useContractAddress();
 
   async function ownerClaim(index: number) {
     try {
@@ -107,7 +110,7 @@ export function OwnerPage() {
       setIsLoading(true);
 
       const contract = new ethers.Contract(
-        CONTRACT_ADDRESS,
+        contractAddress,
         contractABI,
         signer!,
       );
@@ -141,49 +144,52 @@ export function OwnerPage() {
   return (
     <>
       <Header />
-      <div className="container" style={{ bottom: 30 }}>
-        <div className="panel">
-          <h1>List of All AirDrops claimable</h1>
-          {ownerClaimableAidrops.length > 0 && (
-            <div className="claimList" style={{ maxHeight: 1000 }}>
-              <p>
-                <strong>Token Name - Amount</strong>
-              </p>
-              {ownerClaimableAidrops.map((drop, index) => (
-                <div className="claimPanel" key={'drop--w' + index}>
-                  {tokenNames[drop.tokenAddress] ?? drop.tokenAddress}
-                  {' - '}
-                  {drop.amount}
-                  {drop.status === 'UNCLAIMED' && (
-                    <div
-                      className="button"
-                      id="claimButton"
-                      onClick={() => ownerClaim(index)}
-                    >
-                      Claim
-                    </div>
-                  )}
-                  {drop.status === 'CLAIMING' && (
-                    <span style={{ float: 'right' }}>CLAIMING...</span>
-                  )}
-                  {drop.status === 'CLAIMED' && (
-                    <span style={{ float: 'right' }}>CLAIMED</span>
-                  )}
-                </div>
-              ))}
+
+      <AppWrapper address={address} isSupportedNetwork={isSupportedNetwork}>
+        <div className="container" style={{ bottom: 30 }}>
+          <div className="panel">
+            <h1>List of All AirDrops claimable</h1>
+            {ownerClaimableAidrops.length > 0 && (
+              <div className="claimList" style={{ maxHeight: 1000 }}>
+                <p>
+                  <strong>Token Name - Amount</strong>
+                </p>
+                {ownerClaimableAidrops.map((drop, index) => (
+                  <div className="claimPanel" key={'drop--w' + index}>
+                    {tokenNames[drop.tokenAddress] ?? drop.tokenAddress}
+                    {' - '}
+                    {drop.amount}
+                    {drop.status === 'UNCLAIMED' && (
+                      <div
+                        className="button"
+                        id="claimButton"
+                        onClick={() => ownerClaim(index)}
+                      >
+                        Claim
+                      </div>
+                    )}
+                    {drop.status === 'CLAIMING' && (
+                      <span style={{ float: 'right' }}>CLAIMING...</span>
+                    )}
+                    {drop.status === 'CLAIMED' && (
+                      <span style={{ float: 'right' }}>CLAIMED</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            <br />
+            <div
+              className="button"
+              id="claimButton"
+              onClick={() => searchForAirdrops()}
+              style={{ position: 'initial' }}
+            >
+              Search For Airdrops
             </div>
-          )}
-          <br />
-          <div
-            className="button"
-            id="claimButton"
-            onClick={() => searchForAirdrops()}
-            style={{ position: 'initial' }}
-          >
-            Search For Airdrops
           </div>
         </div>
-      </div>
+      </AppWrapper>
     </>
   );
 }

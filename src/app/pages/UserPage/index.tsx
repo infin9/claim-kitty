@@ -1,5 +1,4 @@
 import { Header } from 'app/components/Header';
-import { CONTRACT_ADDRESS } from 'app/globals';
 import * as React from 'react';
 import { useAccount, useContract, useSigner } from 'wagmi';
 import contractABI from 'app/contract/contractABI.json';
@@ -11,6 +10,8 @@ import { BigNumber, ethers } from 'ethers';
 import { child, get, ref } from 'firebase/database';
 import { database } from 'app/firebase';
 import { ErrorCode } from '@ethersproject/logger';
+import { useContractAddress } from 'app/hooks/useContractAddress';
+import { AppWrapper } from 'app/components/AppWrapper/AppWrapper';
 
 class SimpleError extends Error {
   message: string;
@@ -58,8 +59,10 @@ export function UserPage() {
   const { address } = useAccount();
   const { data: signer } = useSigner();
 
+  const [contractAddress, isSupportedNetwork] = useContractAddress();
+
   const contract = useContract({
-    addressOrName: CONTRACT_ADDRESS,
+    addressOrName: contractAddress,
     contractInterface: contractABI,
     signerOrProvider: signer,
   });
@@ -260,93 +263,49 @@ export function UserPage() {
   return (
     <>
       <Header />
-      <div className="container" style={{ bottom: 30 }}>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 20 }}>
-          <a href="/app">Create Airdrop</a>
-          <a href="/user">[Collect Airdrop]</a>
-        </div>
-        <br />
-        <div className="panel">
-          <h1>
-            Welcome to ClaimKitty. <br />
-            Let's see all Kitties claimable!
-          </h1>
-          <input
-            className="form"
-            type="text"
-            name="searchAirdrop"
-            placeholder="Insert Here Token Address to claim"
-            value={searchToken}
-            onChange={e => setSearchToken(e.target.value.trim())}
-          />
-          {!isSearchingForAidrops ? (
-            <div className="button" id="claimAll" onClick={searchForAirdrops}>
-              Search Token
-            </div>
-          ) : (
-            <>
-              <div style={{ margin: '10px 0' }}>{airdropSerachStatus}</div>
-            </>
-          )}
-          {claimableAidrops.length > 0 && (
-            <div className="claimList" style={{ marginTop: 20 }}>
-              {claimableAidrops.map((drop, index) => (
-                <div className="claimPanel" key={'drop' + index}>
-                  {tokenNames[drop.tokenAddress] ?? drop.tokenAddress} -{' '}
-                  {drop.amount}{' '}
-                  {drop.status === 'UNCLAIMED' && (
-                    <div
-                      className="button"
-                      id="claimButton"
-                      onClick={() => {
-                        claimAirdrop(index);
-                      }}
-                    >
-                      Claim
-                    </div>
-                  )}
-                  {drop.status === 'CLAIMING' && (
-                    <span style={{ float: 'right' }}>CLAIMING...</span>
-                  )}
-                  {drop.status === 'CLAIMED' && (
-                    <span style={{ float: 'right' }}>CLAIMED</span>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
 
-        {creatorClaimableAidrops.length > 0 && (
+      <AppWrapper address={address} isSupportedNetwork={isSupportedNetwork}>
+        <div className="container" style={{ bottom: 30 }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 20 }}>
+            <a href="/app">Create Airdrop</a>
+            <a href="/user">[Collect Airdrop]</a>
+          </div>
+          <br />
           <div className="panel">
-            <h1>Claim left Tokens from your own Kitties</h1>
-            <p>
-              {' '}
-              <strong>Please Note:</strong> Your left tokens will be split into
-              three tranches in order to avoid any dump of the Token. First
-              tranche will be available starting from the next day of the
-              AirDrop end. The second one three months after and the third one
-              after six months. You will have 2 weeks to claim your tokens.{' '}
-              <br /> <strong>Example:</strong> If for example your AirDrop ends
-              in 31/12, in 01/01 you will be able to claim the first tranche of
-              your tokens until 15/01. For the second tranche from 01/04 to
-              15/04 and the last one from 01/07 to 15/07.{' '}
-            </p>
-            <>
-              <div className="claimList">
-                <p>
-                  <b>Token Name - Amount</b>
-                </p>
-                {creatorClaimableAidrops.map((drop, index) => (
-                  <div className="claimPanel" key={'drop-creator-' + index}>
-                    {tokenNames[drop.tokenAddress] ?? drop.tokenAddress}
-                    {' - '}
-                    {drop.amount}
+            <h1>
+              Welcome to ClaimKitty. <br />
+              Let's see all Kitties claimable!
+            </h1>
+            <input
+              className="form"
+              type="text"
+              name="searchAirdrop"
+              placeholder="Insert Here Token Address to claim"
+              value={searchToken}
+              onChange={e => setSearchToken(e.target.value.trim())}
+            />
+            {!isSearchingForAidrops ? (
+              <div className="button" id="claimAll" onClick={searchForAirdrops}>
+                Search Token
+              </div>
+            ) : (
+              <>
+                <div style={{ margin: '10px 0' }}>{airdropSerachStatus}</div>
+              </>
+            )}
+            {claimableAidrops.length > 0 && (
+              <div className="claimList" style={{ marginTop: 20 }}>
+                {claimableAidrops.map((drop, index) => (
+                  <div className="claimPanel" key={'drop' + index}>
+                    {tokenNames[drop.tokenAddress] ?? drop.tokenAddress} -{' '}
+                    {drop.amount}{' '}
                     {drop.status === 'UNCLAIMED' && (
                       <div
                         className="button"
                         id="claimButton"
-                        onClick={() => creatorClaim(index)}
+                        onClick={() => {
+                          claimAirdrop(index);
+                        }}
                       >
                         Claim
                       </div>
@@ -360,24 +319,71 @@ export function UserPage() {
                   </div>
                 ))}
               </div>
-              <div
-                className="button"
-                id="claimAll"
-                onClick={() => {
-                  creatorClaimableAidrops.forEach((drop, index) =>
-                    creatorClaim(index),
-                  );
-                }}
-              >
-                Claim All
-              </div>
-            </>
+            )}
           </div>
-        )}
-        <p>
-          <br />
-        </p>
-      </div>
+
+          {creatorClaimableAidrops.length > 0 && (
+            <div className="panel">
+              <h1>Claim left Tokens from your own Kitties</h1>
+              <p>
+                {' '}
+                <strong>Please Note:</strong> Your left tokens will be split
+                into three tranches in order to avoid any dump of the Token.
+                First tranche will be available starting from the next day of
+                the AirDrop end. The second one three months after and the third
+                one after six months. You will have 2 weeks to claim your
+                tokens. <br /> <strong>Example:</strong> If for example your
+                AirDrop ends in 31/12, in 01/01 you will be able to claim the
+                first tranche of your tokens until 15/01. For the second tranche
+                from 01/04 to 15/04 and the last one from 01/07 to 15/07.{' '}
+              </p>
+              <>
+                <div className="claimList">
+                  <p>
+                    <b>Token Name - Amount</b>
+                  </p>
+                  {creatorClaimableAidrops.map((drop, index) => (
+                    <div className="claimPanel" key={'drop-creator-' + index}>
+                      {tokenNames[drop.tokenAddress] ?? drop.tokenAddress}
+                      {' - '}
+                      {drop.amount}
+                      {drop.status === 'UNCLAIMED' && (
+                        <div
+                          className="button"
+                          id="claimButton"
+                          onClick={() => creatorClaim(index)}
+                        >
+                          Claim
+                        </div>
+                      )}
+                      {drop.status === 'CLAIMING' && (
+                        <span style={{ float: 'right' }}>CLAIMING...</span>
+                      )}
+                      {drop.status === 'CLAIMED' && (
+                        <span style={{ float: 'right' }}>CLAIMED</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div
+                  className="button"
+                  id="claimAll"
+                  onClick={() => {
+                    creatorClaimableAidrops.forEach((drop, index) =>
+                      creatorClaim(index),
+                    );
+                  }}
+                >
+                  Claim All
+                </div>
+              </>
+            </div>
+          )}
+          <p>
+            <br />
+          </p>
+        </div>
+      </AppWrapper>
     </>
   );
 }
