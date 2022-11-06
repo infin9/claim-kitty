@@ -9,6 +9,7 @@ import { LoaderContext } from 'app';
 import { ErrorCode } from '@ethersproject/logger';
 import { useContractAddress } from 'app/hooks/useContractAddress';
 import { AppWrapper } from 'app/components/AppWrapper/AppWrapper';
+import { NULL_ADDRESS } from 'app/globals';
 
 class SimpleError extends Error {
   message: string;
@@ -75,11 +76,17 @@ export function OwnerPage() {
 
     const tokenAddress = await airdropContract.token();
     const tokenContract = new ethers.Contract(tokenAddress, erc20ABI, signer!);
-    tokenContract.name().then((tokenName: string) => {
-      setTokenNames(names => ({ ...names, [tokenAddress]: tokenName }));
-    });
 
-    const decimals = await tokenContract.decimals();
+    let decimals = BigNumber.from(18);
+
+    if (tokenAddress !== NULL_ADDRESS) {
+      tokenContract.name().then((tokenName: string) => {
+        setTokenNames(names => ({ ...names, [tokenAddress]: tokenName }));
+      });
+      decimals = await tokenContract.decimals();
+    } else {
+      setTokenNames(names => ({ ...names, [tokenAddress]: 'ETH' }));
+    }
 
     // Owner Claim
 
@@ -87,7 +94,13 @@ export function OwnerPage() {
 
     const ownerClaimStatus: boolean = await airdropContract.ownerClaimStatus();
 
-    const totalAmount = await tokenContract.balanceOf(airdropId);
+    let totalAmount = BigNumber.from(0);
+
+    if (tokenAddress !== NULL_ADDRESS) {
+      totalAmount = await tokenContract.balanceOf(airdropId);
+    } else {
+      totalAmount = await signer!.getBalance(airdropId);
+    }
 
     if (ownerClaimStatus === true) {
       _ownerClaimableDrops.push({

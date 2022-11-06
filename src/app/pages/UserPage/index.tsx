@@ -12,6 +12,7 @@ import { database } from 'app/firebase';
 import { ErrorCode } from '@ethersproject/logger';
 import { useContractAddress } from 'app/hooks/useContractAddress';
 import { AppWrapper } from 'app/components/AppWrapper/AppWrapper';
+import { NULL_ADDRESS } from 'app/globals';
 
 class SimpleError extends Error {
   message: string;
@@ -108,12 +109,16 @@ export function UserPage() {
         airdrops[index].status = 'CLAIMING';
         return [...airdrops];
       });
-      const tokenContract = new ethers.Contract(
-        airdrop.tokenAddress,
-        erc20ABI,
-        signer!,
-      );
-      const decimals = await tokenContract.decimals();
+
+      let decimals = 18;
+      if (airdrop.tokenAddress === NULL_ADDRESS) {
+        const tokenContract = new ethers.Contract(
+          airdrop.tokenAddress,
+          erc20ABI,
+          signer!,
+        );
+        decimals = await tokenContract.decimals();
+      }
       const tree = createMerkleTree(
         airdrop.userList.map(x => createLeaf(x.address, x.amount, decimals)),
       );
@@ -173,8 +178,11 @@ export function UserPage() {
       signer!,
     );
 
+    let decimals = 18;
     const tokenContract = new ethers.Contract(tokenAddress, erc20ABI, signer!);
-    const decimals = await tokenContract.decimals();
+    if (tokenAddress !== NULL_ADDRESS) {
+      decimals = await tokenContract.decimals();
+    }
 
     // User Claim
     const _userClaimableDrops: ClaimableAidrop[] = [];
@@ -201,7 +209,11 @@ export function UserPage() {
     if (roundId >= 0) {
       let totalAmount: BigNumber = await airdropContract.nonClaimedFunds();
       if (totalAmount.isZero()) {
-        totalAmount = await tokenContract.balanceOf(airdropId);
+        if (tokenAddress === NULL_ADDRESS) {
+          totalAmount = await signer!.getBalance(airdropId);
+        } else {
+          totalAmount = await tokenContract.balanceOf(airdropId);
+        }
       }
       const amount = totalAmount.div(4);
       _creatorClaimableDrops.push({
@@ -234,9 +246,13 @@ export function UserPage() {
       }
 
       const tokenContract = new ethers.Contract(token, erc20ABI, signer!);
-      tokenContract.name().then((tokenName: string) => {
-        setTokenNames(names => ({ ...names, [token]: tokenName }));
-      });
+      if (token !== NULL_ADDRESS) {
+        tokenContract.name().then((tokenName: string) => {
+          setTokenNames(names => ({ ...names, [token]: tokenName }));
+        });
+      } else {
+        setTokenNames(names => ({ ...names, [token]: 'ETH' }));
+      }
 
       let pendingAirdrops = [...aidropIds];
       setAirdropSerachStatus('Fetching details...');
