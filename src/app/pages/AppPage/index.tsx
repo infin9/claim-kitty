@@ -134,7 +134,10 @@ export function AppPage() {
     set(ref(database, 'airdrops/' + airdropUuid), jsonData);
 
     const tokenContract = new ethers.Contract(tokenAddress, erc20ABI, signer!);
-    const decimals = await tokenContract.decimals();
+    const decimals =
+      isUsingNativeToken === false
+        ? await tokenContract.decimals()
+        : BigNumber.from(18);
 
     const totalAmount = Object.values(csvData).reduce(
       (previous, current) =>
@@ -144,23 +147,24 @@ export function AppPage() {
       BigNumber.from(0),
     );
 
-    if ((await tokenContract.balanceOf(address)).lt(totalAmount)) {
-      alert("This wallet doesn't have enough balance");
-      setLoadingMessage(undefined);
-      setIsLoading(false);
-      return;
-    }
-
-    if (
-      totalAmount.gt(await tokenContract.allowance(address, contractAddress))
-    ) {
-      setLoadingMessage('Waiting for token allowance approval');
-      const tokenApprovalTransaction = await tokenContract.approve(
-        contractAddress,
-        MAX_APPROVE_AMOUNT,
-      );
-      setLoadingMessage('Processing...');
-      await tokenApprovalTransaction.wait();
+    if (isUsingNativeToken == false) {
+      if ((await tokenContract.balanceOf(address)).lt(totalAmount)) {
+        alert("This wallet doesn't have enough balance");
+        setLoadingMessage(undefined);
+        setIsLoading(false);
+        return;
+      }
+      if (
+        totalAmount.gt(await tokenContract.allowance(address, contractAddress))
+      ) {
+        setLoadingMessage('Waiting for token allowance approval');
+        const tokenApprovalTransaction = await tokenContract.approve(
+          contractAddress,
+          MAX_APPROVE_AMOUNT,
+        );
+        setLoadingMessage('Processing...');
+        await tokenApprovalTransaction.wait();
+      }
     }
 
     const tree = createMerkleTree(
