@@ -133,11 +133,7 @@ export function AppPage() {
     const airdropUuid = uuidv4();
     set(ref(database, 'airdrops/' + airdropUuid), jsonData);
 
-    const tokenContract = new ethers.Contract(
-      tokenAddressInputValue,
-      erc20ABI,
-      signer!,
-    );
+    const tokenContract = new ethers.Contract(tokenAddress, erc20ABI, signer!);
     const decimals = await tokenContract.decimals();
 
     const totalAmount = Object.values(csvData).reduce(
@@ -199,7 +195,7 @@ export function AppPage() {
           isUsingNativeToken === true ? { value: totalAmount } : {};
         const transaction = await contract.createNewAirdrop(
           isPayingToken,
-          tokenAddressInputValue,
+          tokenAddress,
           totalAmount,
           startDateUnix,
           endDateUnix,
@@ -218,7 +214,7 @@ export function AppPage() {
         };
         const transaction = await contract.createNewAirdrop(
           isPayingToken,
-          tokenAddressInputValue,
+          tokenAddress,
           totalAmount,
           startDateUnix,
           endDateUnix,
