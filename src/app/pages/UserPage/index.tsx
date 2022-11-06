@@ -111,7 +111,7 @@ export function UserPage() {
       });
 
       let decimals = 18;
-      if (airdrop.tokenAddress === NULL_ADDRESS) {
+      if (airdrop.tokenAddress !== NULL_ADDRESS) {
         const tokenContract = new ethers.Contract(
           airdrop.tokenAddress,
           erc20ABI,
