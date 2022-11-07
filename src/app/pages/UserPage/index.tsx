@@ -1,6 +1,6 @@
 import { Header } from 'app/components/Header';
 import * as React from 'react';
-import { useAccount, useContract, useSigner } from 'wagmi';
+import { useAccount, useContract, useProvider, useSigner } from 'wagmi';
 import contractABI from 'app/contract/contractABI.json';
 import merkleChildABI from 'app/contract/merkleChildABI.json';
 import erc20ABI from 'app/contract/erc20ABI.json';
@@ -59,6 +59,7 @@ export function UserPage() {
 
   const { address } = useAccount();
   const { data: signer } = useSigner();
+  const provider = useProvider();
 
   const [contractAddress, isSupportedNetwork] = useContractAddress();
 
@@ -178,7 +179,7 @@ export function UserPage() {
       signer!,
     );
 
-    let decimals = 18;
+    let decimals = BigNumber.from(18);
     const tokenContract = new ethers.Contract(tokenAddress, erc20ABI, signer!);
     if (tokenAddress !== NULL_ADDRESS) {
       decimals = await tokenContract.decimals();
@@ -210,7 +211,7 @@ export function UserPage() {
       let totalAmount: BigNumber = await airdropContract.nonClaimedFunds();
       if (totalAmount.isZero()) {
         if (tokenAddress === NULL_ADDRESS) {
-          totalAmount = await signer!.getBalance(airdropId);
+          totalAmount = await provider.getBalance(airdropId);
         } else {
           totalAmount = await tokenContract.balanceOf(airdropId);
         }

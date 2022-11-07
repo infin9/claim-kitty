@@ -1,6 +1,12 @@
 import { Header } from 'app/components/Header';
 import * as React from 'react';
-import { useAccount, useContract, useSigner } from 'wagmi';
+import {
+  useAccount,
+  useBalance,
+  useContract,
+  useProvider,
+  useSigner,
+} from 'wagmi';
 import contractABI from 'app/contract/contractABI.json';
 import merkleChildABI from 'app/contract/merkleChildABI.json';
 import erc20ABI from 'app/contract/erc20ABI.json';
@@ -25,7 +31,7 @@ interface OwnerClaimableAidrop {
   status: 'UNCLAIMED' | 'CLAIMING' | 'CLAIMED';
 }
 export function OwnerPage() {
-  const { setIsLoading } = React.useContext(LoaderContext);
+  const { setIsLoading, setLoadingMessage } = React.useContext(LoaderContext);
   const [ownerClaimableAidrops, setOwnerClaimableAidrops] = React.useState<
     OwnerClaimableAidrop[]
   >([]);
@@ -36,6 +42,7 @@ export function OwnerPage() {
 
   const { address } = useAccount();
   const { data: signer } = useSigner();
+  const provider = useProvider();
 
   const [contractAddress, isSupportedNetwork] = useContractAddress();
 
@@ -73,12 +80,10 @@ export function OwnerPage() {
       merkleChildABI,
       signer!,
     );
-
     const tokenAddress = await airdropContract.token();
     const tokenContract = new ethers.Contract(tokenAddress, erc20ABI, signer!);
 
     let decimals = BigNumber.from(18);
-
     if (tokenAddress !== NULL_ADDRESS) {
       tokenContract.name().then((tokenName: string) => {
         setTokenNames(names => ({ ...names, [tokenAddress]: tokenName }));
@@ -94,15 +99,15 @@ export function OwnerPage() {
 
     const ownerClaimStatus: boolean = await airdropContract.ownerClaimStatus();
 
-    let totalAmount = BigNumber.from(0);
-
-    if (tokenAddress !== NULL_ADDRESS) {
-      totalAmount = await tokenContract.balanceOf(airdropId);
-    } else {
-      totalAmount = await signer!.getBalance(airdropId);
-    }
-
     if (ownerClaimStatus === true) {
+      let totalAmount = BigNumber.from(0);
+
+      if (tokenAddress !== NULL_ADDRESS) {
+        totalAmount = await tokenContract.balanceOf(airdropId);
+      } else {
+        totalAmount = await provider.getBalance(airdropId);
+      }
+
       _ownerClaimableDrops.push({
         tokenAddress: tokenAddress,
         airdrop: airdropId,
@@ -127,23 +132,29 @@ export function OwnerPage() {
         contractABI,
         signer!,
       );
-      const aidropIds: string[] = await contract.getAllAirdrops();
+      const airdropIds: string[] = await contract.getAllAirdrops();
 
-      if (aidropIds.length === 0) {
+      if (airdropIds.length === 0) {
         throw new SimpleError('No airdrops found');
       }
 
-      let pendingAirdrops = [...aidropIds];
+      let pendingAirdrops = [...airdropIds];
       const airdropFetchComplete = (airdropId: string) => {
         pendingAirdrops = pendingAirdrops.filter(e => e !== airdropId);
         if (pendingAirdrops.length === 0) {
           setIsLoading(false);
         }
       };
-      aidropIds.forEach(airdrop =>
-        fetchAirdropData(airdrop, () => airdropFetchComplete(airdrop)),
-      );
+      let i = 1;
+      for (const airdrop of airdropIds) {
+        setLoadingMessage(`Checking airdrops ${i}/${airdropIds.length}`);
+        await fetchAirdropData(airdrop, () => airdropFetchComplete(airdrop));
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        i++;
+      }
+      setLoadingMessage(undefined);
     } catch (e: any) {
+      setLoadingMessage(undefined);
       const code = e.code;
       if (code !== undefined && Object.keys(ErrorCode).includes(code)) {
         alert(e.reason ?? e.message);
