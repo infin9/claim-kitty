@@ -39,7 +39,7 @@ export function OwnerPage() {
 
   const { chain } = useNetwork();
 
-  const provider = useProvider({ chainId: chain?.id });
+  const provider = useProvider();
 
   const [contractAddress, isSupportedNetwork] = useContractAddress();
 
@@ -161,13 +161,6 @@ export function OwnerPage() {
       console.error(e);
     }
   };
-
-  React.useEffect(() => {
-    console.log(provider.network.chainId);
-    provider
-      .getBalance('0x45CD2d4E56Ac672c4747cf62b1538afbd02bcb91')
-      .then(e => console.log(e));
-  }, []);
 
   return (
     <>

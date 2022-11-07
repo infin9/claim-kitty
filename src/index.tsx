@@ -32,15 +32,20 @@ import {
   defaultChains,
   WagmiConfig,
 } from 'wagmi';
-import { getDefaultProvider } from 'ethers';
 import { infuraProvider } from 'wagmi/providers/infura';
+import { publicProvider } from 'wagmi/providers/public';
+import { SUPPORTED_CHAINS } from 'app/chains';
 
 const store = configureAppStore();
 const MOUNT_NODE = document.getElementById('root') as HTMLElement;
 
-const { provider } = configureChains(defaultChains, [
-  infuraProvider({ apiKey: '9932e431bd0f4587a0ba4b2948072580' }),
-]);
+const { provider } = configureChains(
+  SUPPORTED_CHAINS.map(c => c.chain),
+  [
+    infuraProvider({ apiKey: '9932e431bd0f4587a0ba4b2948072580' }),
+    publicProvider(),
+  ],
+);
 
 const client = createClient({
   autoConnect: true,

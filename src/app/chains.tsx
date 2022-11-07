@@ -1,163 +1,98 @@
-interface ChainProps {
-  name: string;
-  id: number;
+import { chain, Chain } from 'wagmi';
+class SupportedChain {
   contractAddress: string;
-  network: {
-    nativeCurrency: {
-      name: string;
-      symbol: string;
-      decimals: number;
-    };
-    rpcUrls: string[];
-  };
-}
-
-class Chain {
-  name: string;
-  id: number;
-  contractAddress: string;
-  network: {
-    nativeCurrency: {
-      name: string;
-      symbol: string;
-      decimals: number;
-    };
-    rpcUrls: string[];
-  };
-
-  constructor(props: ChainProps) {
-    this.name = props.name;
-    this.id = props.id;
+  chain: Chain;
+  constructor(props: { contractAddress: string; chain: Chain }) {
     this.contractAddress = props.contractAddress;
-    this.network = props.network;
+    this.chain = props.chain;
   }
-  get details() {
+
+  get parseJSONForMetamask() {
     return {
-      chainId: '0x' + this.id.toString(16),
-      chainName: this.name,
-      ...this.network,
+      chainId: '0x' + this.chain.id.toString(16),
+      chainName: this.chain.name,
+      nativeCurrency: this.chain.nativeCurrency,
+      rpcUrls: Object.values(this.chain.rpcUrls),
+      blockExplorerUrls: !!this.chain.blockExplorers
+        ? Object.values(this.chain.blockExplorers).map(c => c.url)
+        : undefined,
     };
   }
 }
 
-export const SUPPORTED_CHAINS: Chain[] = [
+export const SUPPORTED_CHAINS: SupportedChain[] = [
   {
-    name: 'Görli',
-    id: 5,
     contractAddress: '0x554ed5BA071205eDC6d9a5BdF86a1E93cBC3AD2c',
-    network: {
-      nativeCurrency: {
-        name: 'Görli Ether',
-        symbol: 'ETH',
-        decimals: 18,
-      },
-      rpcUrls: ['https://rpc.goerli.mudit.blog/'],
-    },
+    chain: chain.goerli,
   },
   {
-    name: 'Ethereum Mainnet',
-    id: 1,
     contractAddress: '0xc2289c8CC82b0010071FEE509233C3F8B45E1484',
-    network: {
-      nativeCurrency: {
-        name: 'Ether',
-        symbol: 'ETH',
-        decimals: 18,
-      },
-      rpcUrls: [
-        'https://api.mycryptoapi.com/eth',
-        'https://cloudflare-eth.com',
-      ],
-    },
+    chain: chain.mainnet,
   },
   {
-    name: 'Binance Smart Chain Mainnet',
-    id: 56,
     contractAddress: '0x3Cc4B318A852C1C0a5A45aBCD260FAb136aB2784',
-    network: {
+    chain: {
+      id: 56,
+      name: 'BNB Smart Chain',
+      network: 'bsc',
       nativeCurrency: {
         name: 'Binance Chain Native Token',
         symbol: 'BNB',
         decimals: 18,
       },
-      rpcUrls: [
-        'https://bsc-dataseed1.binance.org',
-        'https://bsc-dataseed2.binance.org',
-        'https://bsc-dataseed3.binance.org',
-        'https://bsc-dataseed4.binance.org',
-        'https://bsc-dataseed1.defibit.io',
-        'https://bsc-dataseed2.defibit.io',
-        'https://bsc-dataseed3.defibit.io',
-        'https://bsc-dataseed4.defibit.io',
-        'https://bsc-dataseed1.ninicoin.io',
-        'https://bsc-dataseed2.ninicoin.io',
-        'https://bsc-dataseed3.ninicoin.io',
-        'https://bsc-dataseed4.ninicoin.io',
-        'wss://bsc-ws-node.nariox.org',
-      ],
+      rpcUrls: {
+        default: 'https://bsc-dataseed.binance.org',
+        public: 'https://bsc-dataseed.binance.org',
+      },
+      testnet: false,
     },
   },
   {
-    name: 'Polygon Mainnet',
-    id: 137,
     contractAddress: '0x2C4b68C1D67f50dA4f87c13a54fE3Afd3ba4Fe90',
-    network: {
-      nativeCurrency: {
-        name: 'MATIC',
-        symbol: 'MATIC',
-        decimals: 18,
-      },
-      rpcUrls: [
-        'https://polygon-rpc.com/',
-        'https://rpc-mainnet.matic.network',
-        'https://matic-mainnet.chainstacklabs.com',
-        'https://rpc-mainnet.maticvigil.com',
-        'https://rpc-mainnet.matic.quiknode.pro',
-        'https://matic-mainnet-full-rpc.bwarelabs.com',
-        'https://polygon-bor.publicnode.com',
-      ],
-    },
+    chain: chain.polygon,
   },
   {
-    name: 'Moonriver',
-    id: 1285,
     contractAddress: '0x4010D4d88cca02572b38AD9542Dd6C7524914810',
-    network: {
-      nativeCurrency: {
-        name: 'Moonriver',
-        symbol: 'MOVR',
-        decimals: 18,
+    chain: {
+      id: 1285,
+      name: 'Moonriver',
+      network: 'moonriver',
+      nativeCurrency: { name: 'Moonriver', symbol: 'MOVR', decimals: 18 },
+      rpcUrls: {
+        default: 'https://rpc.api.moonriver.moonbeam.network',
+        public: 'https://rpc.api.moonriver.moonbeam.network',
       },
-      rpcUrls: [
-        'https://rpc.api.moonriver.moonbeam.network',
-        'wss://wss.api.moonriver.moonbeam.network',
-      ],
+      testnet: false,
     },
   },
   {
-    name: 'Arbitrum One',
-    id: 42161,
     contractAddress: '0xEeFf4Ae9A80c97b779499aD73bfDE209aA48db1F',
-    network: {
-      nativeCurrency: {
-        name: 'Ether',
-        symbol: 'ETH',
-        decimals: 18,
+    chain: {
+      ...chain.arbitrum,
+      rpcUrls: {
+        default: 'https://arb1.arbitrum.io/rpc',
+        public: 'https://arb1.arbitrum.io/rpc',
       },
-      rpcUrls: ['https://arb1.arbitrum.io/rpc'],
     },
   },
   {
-    name: 'Avalanche C-Chain',
-    id: 43114,
     contractAddress: '0x579AbfC42980c56f87BCffCDe07a93c00a8733a1',
-    network: {
+    chain: {
+      id: 43114,
+      name: 'Avalanche',
+      network: 'avalanche',
       nativeCurrency: {
+        decimals: 18,
         name: 'Avalanche',
         symbol: 'AVAX',
-        decimals: 18,
       },
-      rpcUrls: ['https://api.avax.network/ext/bc/C/rpc'],
+      rpcUrls: {
+        default: 'https://api.avax.network/ext/bc/C/rpc',
+      },
+      blockExplorers: {
+        default: { name: 'SnowTrace', url: 'https://snowtrace.io' },
+      },
+      testnet: false,
     },
   },
-].map(x => new Chain(x));
+].map(x => new SupportedChain(x));

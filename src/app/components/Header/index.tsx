@@ -20,13 +20,14 @@ export function Header() {
     throwForSwitchChainNotSupported: true,
     onError: (errr, variables) => {
       const chainId = variables.chainId;
-      const chain = SUPPORTED_CHAINS.find(c => c.id == chainId);
+      const chain = SUPPORTED_CHAINS.find(c => c.chain.id == chainId);
       if (chain) {
+        console.log(chain.parseJSONForMetamask);
         try {
           window.ethereum
             ?.request({
               method: 'wallet_addEthereumChain',
-              params: [chain.details],
+              params: [chain.parseJSONForMetamask],
             })
             .catch(e => {
               alert(
@@ -106,12 +107,11 @@ export function Header() {
                 switchToNetwork(e.target.value);
               }}
             >
-              {SUPPORTED_CHAINS.findIndex(c => c.id == chain?.id) === -1 && (
-                <option>Unsupported Network</option>
-              )}
+              {SUPPORTED_CHAINS.findIndex(c => c.chain.id == chain?.id) ===
+                -1 && <option>Unsupported Network</option>}
               {SUPPORTED_CHAINS.map(c => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
+                <option key={c.chain.id} value={c.chain.id}>
+                  {c.chain.name}
                 </option>
               ))}
             </select>
