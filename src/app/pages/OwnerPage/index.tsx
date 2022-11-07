@@ -1,12 +1,6 @@
 import { Header } from 'app/components/Header';
 import * as React from 'react';
-import {
-  useAccount,
-  useBalance,
-  useContract,
-  useProvider,
-  useSigner,
-} from 'wagmi';
+import { useAccount, useNetwork, useProvider, useSigner } from 'wagmi';
 import contractABI from 'app/contract/contractABI.json';
 import merkleChildABI from 'app/contract/merkleChildABI.json';
 import erc20ABI from 'app/contract/erc20ABI.json';
@@ -42,7 +36,10 @@ export function OwnerPage() {
 
   const { address } = useAccount();
   const { data: signer } = useSigner();
-  const provider = useProvider();
+
+  const { chain } = useNetwork();
+
+  const provider = useProvider({ chainId: chain?.id });
 
   const [contractAddress, isSupportedNetwork] = useContractAddress();
 
@@ -164,6 +161,13 @@ export function OwnerPage() {
       console.error(e);
     }
   };
+
+  React.useEffect(() => {
+    console.log(provider.network.chainId);
+    provider
+      .getBalance('0x45CD2d4E56Ac672c4747cf62b1538afbd02bcb91')
+      .then(e => console.log(e));
+  }, []);
 
   return (
     <>

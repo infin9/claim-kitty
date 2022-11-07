@@ -26,17 +26,26 @@ import reportWebVitals from 'reportWebVitals';
 
 // Initialize languages
 import './locales/i18n';
-import { createClient, WagmiConfig } from 'wagmi';
+import {
+  configureChains,
+  createClient,
+  defaultChains,
+  WagmiConfig,
+} from 'wagmi';
 import { getDefaultProvider } from 'ethers';
+import { infuraProvider } from 'wagmi/providers/infura';
 
 const store = configureAppStore();
 const MOUNT_NODE = document.getElementById('root') as HTMLElement;
 
+const { provider } = configureChains(defaultChains, [
+  infuraProvider({ apiKey: '9932e431bd0f4587a0ba4b2948072580' }),
+]);
+
 const client = createClient({
   autoConnect: true,
-  provider: getDefaultProvider(),
-})
-
+  provider: provider,
+});
 
 ReactDOMClient.createRoot(MOUNT_NODE!).render(
   <Provider store={store}>
