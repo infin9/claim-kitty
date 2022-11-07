@@ -1,4 +1,5 @@
-import { NULL_ADDRESS, SUPPORTED_CHAINS } from 'app/globals';
+import { SUPPORTED_CHAINS } from 'app/chains';
+import { NULL_ADDRESS } from 'app/globals';
 import { useNetwork } from 'wagmi';
 
 export function useContractAddress(): [string, boolean] {
