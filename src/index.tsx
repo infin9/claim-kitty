@@ -35,16 +35,14 @@ import {
 import { infuraProvider } from 'wagmi/providers/infura';
 import { publicProvider } from 'wagmi/providers/public';
 import { SUPPORTED_CHAINS } from 'app/chains';
+import { INFURA_KEY } from 'app/globals';
 
 const store = configureAppStore();
 const MOUNT_NODE = document.getElementById('root') as HTMLElement;
 
 const { provider } = configureChains(
   SUPPORTED_CHAINS.map(c => c.chain),
-  [
-    infuraProvider({ apiKey: '9932e431bd0f4587a0ba4b2948072580' }),
-    publicProvider(),
-  ],
+  [infuraProvider({ apiKey: INFURA_KEY }), publicProvider()],
 );
 
 const client = createClient({

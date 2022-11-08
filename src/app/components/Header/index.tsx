@@ -1,5 +1,6 @@
 import { SUPPORTED_CHAINS } from 'app/chains';
 import * as React from 'react';
+import styled from 'styled-components';
 
 import {
   useAccount,
@@ -82,10 +83,10 @@ export function Header() {
             textAlign: 'right',
           }}
         >
-          <span>Connected Wallet</span>
+          <b>Connected</b>
           <br />
           <b>
-            {address?.slice(0, 8)}.......
+            Wallet: {address?.slice(0, 8)}.......
             {address?.slice(address!.length - 8, address!.length)} (
             <a
               href="#"
@@ -101,7 +102,7 @@ export function Header() {
           <br />
           <span>
             <b>Network: </b>
-            <select
+            <ChainSelect
               value={chain?.id}
               onChange={e => {
                 switchToNetwork(e.target.value);
@@ -114,10 +115,17 @@ export function Header() {
                   {c.chain.name}
                 </option>
               ))}
-            </select>
+            </ChainSelect>
           </span>
         </div>
       )}
     </header>
   );
 }
+
+const ChainSelect = styled.select`
+  border-radius: 10px;
+  padding: 0px 5px;
+  border: none;
+  margin-top: 2px;
+`;

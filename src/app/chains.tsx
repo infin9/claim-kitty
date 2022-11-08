@@ -1,4 +1,5 @@
 import { chain, Chain } from 'wagmi';
+import { INFURA_KEY } from './globals';
 class SupportedChain {
   contractAddress: string;
   chain: Chain;
@@ -41,8 +42,8 @@ export const SUPPORTED_CHAINS: SupportedChain[] = [
         decimals: 18,
       },
       rpcUrls: {
-        default: 'https://bsc-dataseed.binance.org',
-        public: 'https://bsc-dataseed.binance.org',
+        default: 'https://rpc.ankr.com/bsc',
+        public: 'https://rpc.ankr.com/bsc',
       },
       testnet: false,
     },
