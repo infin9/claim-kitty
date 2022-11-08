@@ -27,11 +27,11 @@ export const SUPPORTED_CHAINS: SupportedChain[] = [
     chain: chain.goerli,
   },
   {
-    contractAddress: '0xc2289c8CC82b0010071FEE509233C3F8B45E1484',
+    contractAddress: '0x2C4b68C1D67f50dA4f87c13a54fE3Afd3ba4Fe90',
     chain: chain.mainnet,
   },
   {
-    contractAddress: '0x3Cc4B318A852C1C0a5A45aBCD260FAb136aB2784',
+    contractAddress: '0x91f09723017E08382926B0A37f540668e3b2540A',
     chain: {
       id: 56,
       name: 'BNB Smart Chain',
@@ -49,11 +49,11 @@ export const SUPPORTED_CHAINS: SupportedChain[] = [
     },
   },
   {
-    contractAddress: '0x2C4b68C1D67f50dA4f87c13a54fE3Afd3ba4Fe90',
+    contractAddress: '0x615D6E0b243CfBbdBAdFDFcEb7A77429562b832A',
     chain: chain.polygon,
   },
   {
-    contractAddress: '0x4010D4d88cca02572b38AD9542Dd6C7524914810',
+    contractAddress: '0xEeFf4Ae9A80c97b779499aD73bfDE209aA48db1F',
     chain: {
       id: 1285,
       name: 'Moonriver',
@@ -67,7 +67,7 @@ export const SUPPORTED_CHAINS: SupportedChain[] = [
     },
   },
   {
-    contractAddress: '0xEeFf4Ae9A80c97b779499aD73bfDE209aA48db1F',
+    contractAddress: '0x579AbfC42980c56f87BCffCDe07a93c00a8733a1',
     chain: {
       ...chain.arbitrum,
       rpcUrls: {
@@ -77,7 +77,17 @@ export const SUPPORTED_CHAINS: SupportedChain[] = [
     },
   },
   {
-    contractAddress: '0x579AbfC42980c56f87BCffCDe07a93c00a8733a1',
+    contractAddress: '0x7Dbb05dbc6973c6771F3073A6153D79e993F2858',
+    chain: {
+      ...chain.optimism,
+      rpcUrls: {
+        default: 'https://mainnet.optimism.io',
+        public: 'https://mainnet.optimism.io',
+      },
+    },
+  },
+  {
+    contractAddress: '0x547C927Dc80c0F94A3825C805D725a69aB16DD6E',
     chain: {
       id: 43114,
       name: 'Avalanche',

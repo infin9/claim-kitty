@@ -6,14 +6,13 @@ import { getDatabase } from 'firebase/database';
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: 'AIzaSyAmvN70iJiINjovaXlPKdT6Y9mQkQIdnKY',
-  authDomain: 'claim-kitty.firebaseapp.com',
-  databaseURL: 'https://claim-kitty-default-rtdb.firebaseio.com',
-  projectId: 'claim-kitty',
-  storageBucket: 'claim-kitty.appspot.com',
-  messagingSenderId: '824225186729',
-  appId: '1:824225186729:web:cf46e74755a332d58bbab8',
-  measurementId: 'G-91BGY294V1',
+  apiKey: 'AIzaSyB34wv1VtgW5jpB-GMHFc2J5MK2C9DuvCs',
+  authDomain: 'claimkitty-3acf8.firebaseapp.com',
+  databaseURL: 'https://claimkitty-3acf8-default-rtdb.firebaseio.com/',
+  projectId: 'claimkitty-3acf8',
+  storageBucket: 'claimkitty-3acf8.appspot.com',
+  messagingSenderId: '832415540230',
+  appId: '1:832415540230:web:879e1f9a3071b6be460f87',
 };
 
 // Initialize Firebase

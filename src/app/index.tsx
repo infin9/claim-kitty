@@ -29,6 +29,7 @@ export function App() {
       ></Helmet>
       <LoadingOverlay>
         <Switch>
+          <Route exact path="/" component={AppPage} />
           <Route exact path="/app" component={AppPage} />
           <Route exact path="/user" component={UserPage} />
           <Route exact path="/owner" component={OwnerPage} />
